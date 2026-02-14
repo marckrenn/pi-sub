@@ -182,11 +182,13 @@ export function resolveDisplayThemeTarget(
 				dividerColor: "dim",
 				dividerBlanks: 1,
 				showProviderDivider: true,
+				statusLeadingDivider: false,
+				statusTrailingDivider: false,
 				dividerFooterJoin: true,
 				showTopDivider: false,
 				showBottomDivider: false,
 				paddingLeft: 1,
-			paddingRight: 1,
+				paddingRight: 1,
 				widgetPlacement: "belowEditor",
 				errorThreshold: 25,
 				warningThreshold: 50,
@@ -252,12 +254,16 @@ export function buildRandomDisplay(base: DisplaySettings): DisplaySettings {
 	display.dividerColor = pickRandom(RANDOM_DIVIDER_COLORS);
 	display.dividerBlanks = pickRandom(RANDOM_DIVIDER_BLANKS);
 	display.showProviderDivider = randomBool();
+	display.statusLeadingDivider = randomBool();
+	display.statusTrailingDivider = randomBool();
 	display.dividerFooterJoin = randomBool();
 	display.showTopDivider = randomBool();
 	display.showBottomDivider = randomBool();
 
 	if (display.dividerCharacter === "none") {
 		display.showProviderDivider = false;
+		display.statusLeadingDivider = false;
+		display.statusTrailingDivider = false;
 		display.dividerFooterJoin = false;
 		display.showTopDivider = false;
 		display.showBottomDivider = false;

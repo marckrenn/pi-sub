@@ -4,7 +4,12 @@ import type { Theme } from "@mariozechner/pi-coding-agent";
 import { visibleWidth } from "@mariozechner/pi-tui";
 import { formatUsageStatus, formatUsageWindowParts } from "../src/formatting.js";
 import { buildDisplayShareString, decodeDisplayShareString } from "../src/share.js";
-import { applyDisplayChange } from "../src/settings/display.js";
+import {
+	applyDisplayChange,
+	buildDisplayBarItems,
+	buildDisplayDividerItems,
+	buildDisplayLayoutItems,
+} from "../src/settings/display.js";
 import { buildDisplayThemeItems, saveDisplayTheme, upsertDisplayTheme } from "../src/settings/themes.js";
 import { getDefaultSettings, resolveBaseTextColor } from "../src/settings-types.js";
 import type { UsageSnapshot } from "../src/types.js";
@@ -206,6 +211,54 @@ test("applyDisplayChange accepts custom reset containment", () => {
 	const settings = getDefaultSettings();
 	applyDisplayChange(settings, "resetTimeContainment", "{}");
 	assert.equal(settings.display.resetTimeContainment, "{}");
+});
+
+test("layout items expose aboveEditor and clamp status alignment choices", () => {
+	const settings = getDefaultSettings();
+
+	let items = buildDisplayLayoutItems(settings);
+	const placementItem = items.find((item) => item.id === "widgetPlacement");
+	assert.deepEqual(placementItem?.values, ["aboveEditor", "belowEditor", "status"]);
+
+	settings.display.widgetPlacement = "status";
+	items = buildDisplayLayoutItems(settings);
+	const alignmentItem = items.find((item) => item.id === "alignment");
+	assert.deepEqual(alignmentItem?.values, ["left"]);
+	assert.equal(alignmentItem?.currentValue, "left");
+});
+
+test("status placement hides fill width option", () => {
+	const settings = getDefaultSettings();
+	settings.display.widgetPlacement = "status";
+
+	const items = buildDisplayBarItems(settings);
+	const barWidthItem = items.find((item) => item.id === "barWidth");
+	assert.ok(barWidthItem);
+	assert.ok(!(barWidthItem?.values ?? []).includes("fill"));
+});
+
+test("divider items switch between widget and status placement options", () => {
+	const settings = getDefaultSettings();
+
+	let items = buildDisplayDividerItems(settings);
+	assert.ok(items.some((item) => item.id === "showTopDivider"));
+	assert.ok(items.some((item) => item.id === "showBottomDivider"));
+	assert.ok(!items.some((item) => item.id === "statusLeadingDivider"));
+
+	settings.display.widgetPlacement = "status";
+	items = buildDisplayDividerItems(settings);
+	assert.ok(!items.some((item) => item.id === "showTopDivider"));
+	assert.ok(!items.some((item) => item.id === "showBottomDivider"));
+	assert.ok(items.some((item) => item.id === "statusLeadingDivider"));
+	assert.ok(items.some((item) => item.id === "statusTrailingDivider"));
+});
+
+test("applyDisplayChange toggles status edge dividers", () => {
+	const settings = getDefaultSettings();
+	applyDisplayChange(settings, "statusLeadingDivider", "on");
+	applyDisplayChange(settings, "statusTrailingDivider", "on");
+	assert.equal(settings.display.statusLeadingDivider, true);
+	assert.equal(settings.display.statusTrailingDivider, true);
 });
 
 test("decodeDisplayShareString rejects invalid payloads", () => {

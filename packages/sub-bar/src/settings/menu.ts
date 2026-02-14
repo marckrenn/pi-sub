@@ -120,8 +120,8 @@ export function buildDisplayMenuItems(): TooltipSelectItem[] {
 		{
 			value: "display-divider",
 			label: "Dividers",
-			description: "character, blanks, status divider, lines",
-			tooltip: "Change divider character, spacing, status separator, and divider lines.",
+			description: "character, blanks, status separators",
+			tooltip: "Change divider character, spacing, status separators, and widget divider lines.",
 		},
 		{
 			value: "display-color",

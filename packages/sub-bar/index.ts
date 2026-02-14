@@ -471,12 +471,13 @@ export default function createExtension(pi: ExtensionAPI) {
 		usage: UsageSnapshot | undefined,
 		contentWidth: number,
 		message?: string,
-		options?: { forceNoFill?: boolean }
+		options?: { forceNoFill?: boolean; forceLeftAlignment?: boolean }
 	): string[] {
 		const paddingLeft = settings.display.paddingLeft ?? 0;
 		const paddingRight = settings.display.paddingRight ?? 0;
 		const innerWidth = Math.max(1, contentWidth - paddingLeft - paddingRight);
-		const alignment = settings.display.alignment ?? "left";
+		const configuredAlignment = settings.display.alignment ?? "left";
+		const alignment = options?.forceLeftAlignment ? "left" : configuredAlignment;
 		const configuredHasFill = settings.display.barWidth === "fill" || settings.display.dividerBlanks === "fill";
 		const hasFill = options?.forceNoFill ? false : configuredHasFill;
 		const wantsSplit = options?.forceNoFill ? false : alignment === "split";
@@ -529,17 +530,65 @@ export default function createExtension(pi: ExtensionAPI) {
 		return lines;
 	}
 
+	function buildStatusEdgeDivider(theme: Theme): string {
+		const dividerChar = settings.display.dividerCharacter ?? "│";
+		if (dividerChar === "none") return "";
+		const dividerColor: ThemeColor = resolveDividerColor(settings.display.dividerColor);
+		const dividerGlyph = dividerChar === "blank" ? " " : dividerChar;
+		if (!dividerGlyph) return "";
+		const blanks = typeof settings.display.dividerBlanks === "number" ? settings.display.dividerBlanks : 1;
+		const spacing = " ".repeat(Math.max(0, blanks));
+		return `${spacing}${theme.fg(dividerColor, dividerGlyph)}${spacing}`;
+	}
+
 	function renderUsageWidget(ctx: ExtensionContext, usage: UsageSnapshot | undefined, message?: string): void {
 		if (!ctx.hasUI || !uiEnabled) {
 			return;
 		}
 
+		const placement = settings.display.widgetPlacement ?? "belowEditor";
 
+		if (placement === "status") {
+			ctx.ui.setWidget("usage", undefined);
+			if (!usage && !message) {
+				ctx.ui.setStatus("sub-bar", "");
+				return;
+			}
+			const theme = ctx.ui.theme;
+			const terminalWidth = process.stdout.columns || 80;
+			// In status-line placement we must not use fill-based layouts (they assume full terminal width).
+			// The Pi footer concatenates *all* extension statuses onto one line and then truncates,
+			// so we render at natural width here to avoid padding that would overflow when other
+			// status hooks are present.
+			const lines = formatUsageContent(ctx, theme, usage, terminalWidth, message, {
+				forceNoFill: true,
+				forceLeftAlignment: true,
+			});
+			if (lines.length === 0) {
+				ctx.ui.setStatus("sub-bar", "");
+				return;
+			}
+			let statusLine = lines.join(" ");
+			const edgeDivider = buildStatusEdgeDivider(theme);
+			if (edgeDivider) {
+				if (settings.display.statusLeadingDivider) {
+					statusLine = `${edgeDivider}${statusLine}`;
+				}
+				if (settings.display.statusTrailingDivider) {
+					statusLine = `${statusLine}${edgeDivider}`;
+				}
+			}
+			ctx.ui.setStatus("sub-bar", truncateToWidth(statusLine, terminalWidth, theme.fg("dim", "...")));
+			return;
+		}
+
+		ctx.ui.setStatus("sub-bar", "");
 		if (!usage && !message) {
 			ctx.ui.setWidget("usage", undefined);
 			return;
 		}
 
+		const widgetPlacement = placement === "aboveEditor" ? "aboveEditor" : "belowEditor";
 		const setWidgetWithPlacement = (ctx.ui as unknown as { setWidget: (...args: unknown[]) => void }).setWidget;
 		setWidgetWithPlacement(
 			"usage",
@@ -575,7 +624,7 @@ export default function createExtension(pi: ExtensionAPI) {
 				},
 				invalidate() {},
 			}),
-			{ placement: "belowEditor" },
+			{ placement: widgetPlacement },
 		);
 	}
 

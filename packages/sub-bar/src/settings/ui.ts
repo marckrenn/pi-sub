@@ -184,7 +184,13 @@ export async function showSettingsUI(
 					ctx.ui.notify("Enter a value", "warning");
 					return null;
 				}
-				if (trimmed === "fill") return "fill";
+				if (trimmed === "fill") {
+					if ((settings.display.widgetPlacement ?? "belowEditor") === "status") {
+						ctx.ui.notify("fill is unavailable in status-line placement", "warning");
+						return null;
+					}
+					return "fill";
+				}
 				return parseInteger(trimmed, 0, 100);
 			};
 
@@ -1260,10 +1266,14 @@ export async function showSettingsUI(
 					attachCustomInputs(items, customHandlers);
 
 					handleChange = (id, value) => {
-						const previousStatusPack = settings.display.statusIconPack;
 						settings = applyDisplayChange(settings, id, value);
 						saveSettings(settings);
 						if (onSettingsChange) void onSettingsChange(settings);
+						if (currentCategory === "display-layout" && id === "widgetPlacement") {
+							rebuild();
+							tui.requestRender();
+							return;
+						}
 						if (currentCategory === "display-bar" && id === "barType") {
 							rebuild();
 							tui.requestRender();

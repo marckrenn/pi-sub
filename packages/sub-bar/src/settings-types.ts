@@ -53,7 +53,7 @@ export type WidgetWrapping = OverflowMode;
 /**
  * Widget placement
  */
-export type WidgetPlacement = "belowEditor";
+export type WidgetPlacement = "aboveEditor" | "belowEditor" | "status";
 
 /**
  * Alignment for the widget
@@ -345,6 +345,10 @@ export interface DisplaySettings {
 	dividerBlanks: DividerBlanks;
 	/** Show divider between provider label and usage */
 	showProviderDivider: boolean;
+	/** Show leading divider in status-line placement */
+	statusLeadingDivider: boolean;
+	/** Show trailing divider in status-line placement */
+	statusTrailingDivider: boolean;
 	/** Connect divider glyphs to the bottom divider line */
 	dividerFooterJoin: boolean;
 	/** Show divider line above the bar */
@@ -503,6 +507,8 @@ export function getDefaultSettings(): Settings {
 			dividerColor: "dim",
 			dividerBlanks: 1,
 			showProviderDivider: true,
+			statusLeadingDivider: false,
+			statusTrailingDivider: false,
 			dividerFooterJoin: true,
 			showTopDivider: false,
 			showBottomDivider: true,

@@ -22,6 +22,7 @@ import type {
 	StatusIconPack,
 	DividerColor,
 	UsageColorTargets,
+	WidgetPlacement,
 } from "../settings-types.js";
 import {
 	BASE_COLOR_OPTIONS,
@@ -31,8 +32,20 @@ import {
 } from "../settings-types.js";
 import { CUSTOM_OPTION } from "../ui/settings-list.js";
 
+function isStatusLinePlacement(settings: Settings): boolean {
+	return (settings.display.widgetPlacement ?? "belowEditor") === "status";
+}
+
 export function buildDisplayLayoutItems(settings: Settings): SettingItem[] {
+	const statusPlacement = isStatusLinePlacement(settings);
 	return [
+		{
+			id: "widgetPlacement",
+			label: "Widget Placement",
+			currentValue: settings.display.widgetPlacement ?? "belowEditor",
+			values: ["aboveEditor", "belowEditor", "status"] as WidgetPlacement[],
+			description: "Show as widget above/below editor (3 lines) or compact in footer status line (1 line).",
+		},
 		{
 			id: "showContextBar",
 			label: "Show Context Bar",
@@ -43,9 +56,13 @@ export function buildDisplayLayoutItems(settings: Settings): SettingItem[] {
 		{
 			id: "alignment",
 			label: "Alignment",
-			currentValue: settings.display.alignment,
-			values: ["left", "center", "right", "split"] as DisplayAlignment[],
-			description: "Align the usage line inside the widget.",
+			currentValue: statusPlacement ? "left" : settings.display.alignment,
+			values: statusPlacement
+				? (["left"] as DisplayAlignment[])
+				: (["left", "center", "right", "split"] as DisplayAlignment[]),
+			description: statusPlacement
+				? "Status-line placement always uses left alignment."
+				: "Align the usage line inside the widget.",
 		},
 		{
 			id: "overflow",
@@ -220,6 +237,10 @@ export function buildDisplayColorItems(settings: Settings): SettingItem[] {
 }
 
 export function buildDisplayBarItems(settings: Settings): SettingItem[] {
+	const statusPlacement = isStatusLinePlacement(settings);
+	const barWidthValues = statusPlacement
+		? (["1", "4", "6", "8", "10", "12", CUSTOM_OPTION] as string[])
+		: (["1", "4", "6", "8", "10", "12", "fill", CUSTOM_OPTION] as string[]);
 	const items: SettingItem[] = [
 		{
 			id: "barType",
@@ -251,8 +272,10 @@ export function buildDisplayBarItems(settings: Settings): SettingItem[] {
 			id: "barWidth",
 			label: "Bar Width",
 			currentValue: String(settings.display.barWidth),
-			values: ["1", "4", "6", "8", "10", "12", "fill", CUSTOM_OPTION],
-			description: "Set the bar width or fill available space.",
+			values: barWidthValues,
+			description: statusPlacement
+				? "Set the bar width (fill is unavailable in status-line placement)."
+				: "Set the bar width or fill available space.",
 		},
 		{
 			id: "containBar",
@@ -430,7 +453,8 @@ export function buildDisplayStatusItems(settings: Settings): SettingItem[] {
 }
 
 export function buildDisplayDividerItems(settings: Settings): SettingItem[] {
-	return [
+	const statusPlacement = isStatusLinePlacement(settings);
+	const commonItems: SettingItem[] = [
 		{
 			id: "dividerCharacter",
 			label: "Divider Character",
@@ -466,6 +490,30 @@ export function buildDisplayDividerItems(settings: Settings): SettingItem[] {
 			values: ["on", "off"],
 			description: "Show the divider after the provider label.",
 		},
+	];
+
+	if (statusPlacement) {
+		return [
+			...commonItems,
+			{
+				id: "statusLeadingDivider",
+				label: "Status Leading Divider",
+				currentValue: settings.display.statusLeadingDivider ? "on" : "off",
+				values: ["on", "off"],
+				description: "Add a divider before the status-line output.",
+			},
+			{
+				id: "statusTrailingDivider",
+				label: "Status Trailing Divider",
+				currentValue: settings.display.statusTrailingDivider ? "on" : "off",
+				values: ["on", "off"],
+				description: "Add a divider after the status-line output.",
+			},
+		];
+	}
+
+	return [
+		...commonItems,
 		{
 			id: "showTopDivider",
 			label: "Show Top Divider",
@@ -487,7 +535,6 @@ export function buildDisplayDividerItems(settings: Settings): SettingItem[] {
 			values: ["on", "off"],
 			description: "Draw reverse-T connectors for top/bottom dividers.",
 		},
-
 	];
 }
 
@@ -640,6 +687,9 @@ export function applyDisplayChange(settings: Settings, id: string, value: string
 		case "boldWindowTitle":
 			settings.display.boldWindowTitle = value === "on";
 			break;
+		case "widgetPlacement":
+			settings.display.widgetPlacement = value as WidgetPlacement;
+			break;
 		case "showContextBar":
 			settings.display.showContextBar = value === "on";
 			break;
@@ -676,6 +726,12 @@ export function applyDisplayChange(settings: Settings, id: string, value: string
 		}
 		case "showProviderDivider":
 			settings.display.showProviderDivider = value === "on";
+			break;
+		case "statusLeadingDivider":
+			settings.display.statusLeadingDivider = value === "on";
+			break;
+		case "statusTrailingDivider":
+			settings.display.statusTrailingDivider = value === "on";
 			break;
 		case "dividerFooterJoin":
 			settings.display.dividerFooterJoin = value === "on";

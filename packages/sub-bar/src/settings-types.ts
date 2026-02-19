@@ -135,6 +135,13 @@ export const BASE_COLOR_OPTIONS = [...DIVIDER_COLOR_OPTIONS, ...BACKGROUND_COLOR
  */
 export type BaseTextColor = (typeof BASE_COLOR_OPTIONS)[number];
 
+/**
+ * Background options for the widget line.
+ */
+export const WIDGET_BACKGROUND_OPTIONS = ["none", ...BASE_COLOR_OPTIONS] as const;
+
+export type WidgetBackgroundColor = (typeof WIDGET_BACKGROUND_OPTIONS)[number];
+
 export function normalizeDividerColor(value?: string): DividerColor {
 	if (!value) return "borderMuted";
 	if (value === "accent" || value === "primary") return "primary";
@@ -177,8 +184,21 @@ export function normalizeBaseTextColor(value?: string): BaseTextColor {
 	return "dim";
 }
 
+export function normalizeBackgroundColor(value?: string): WidgetBackgroundColor {
+	if (!value || value === "none" || value === "transparent") return "none";
+	if (value === "accent" || value === "primary") return "primary";
+	if ((BASE_COLOR_OPTIONS as readonly string[]).includes(value)) {
+		return value as BaseTextColor;
+	}
+	return "none";
+}
+
 export function resolveBaseTextColor(value?: string): BaseTextColor {
 	return normalizeBaseTextColor(value);
+}
+
+export function resolveBackgroundColor(value?: string): WidgetBackgroundColor {
+	return normalizeBackgroundColor(value);
 }
 
 /**
@@ -330,7 +350,7 @@ export interface DisplaySettings {
 	/** Base text color for widget labels */
 	baseTextColor: BaseTextColor;
 	/** Background color for the widget line */
-	backgroundColor: BaseTextColor;
+	backgroundColor: WidgetBackgroundColor;
 	/** Show window titles (5h, Week, etc.) */
 	showWindowTitle: boolean;
 	/** Bold window titles (5h, Week, etc.) */

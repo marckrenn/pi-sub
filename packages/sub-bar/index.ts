@@ -10,8 +10,8 @@ import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ProviderName, ProviderUsageEntry, SubCoreAllState, SubCoreState, UsageSnapshot } from "./src/types.js";
-import { type Settings, type BaseTextColor } from "./src/settings-types.js";
-import { isBackgroundColor, resolveBaseTextColor, resolveDividerColor } from "./src/settings-types.js";
+import { type Settings, type BaseTextColor, type WidgetBackgroundColor } from "./src/settings-types.js";
+import { isBackgroundColor, resolveBackgroundColor, resolveBaseTextColor, resolveDividerColor } from "./src/settings-types.js";
 import { buildDividerLine } from "./src/dividers.js";
 import type { CoreSettings } from "@marckrenn/pi-sub-shared";
 import type { KeyId } from "@mariozechner/pi-tui";
@@ -40,7 +40,8 @@ type SubCoreAction = {
 	force?: boolean;
 };
 
-function applyBackground(lines: string[], theme: Theme, color: BaseTextColor, width: number): string[] {
+function applyBackground(lines: string[], theme: Theme, color: WidgetBackgroundColor, width: number): string[] {
+	if (color === "none") return lines;
 	const bgAnsi = isBackgroundColor(color)
 		? theme.getBgAnsi(color as Parameters<Theme["getBgAnsi"]>[0])
 		: theme.getFgAnsi(resolveDividerColor(color)).replace(/\x1b\[38;/g, "\x1b[48;").replace(/\x1b\[39m/g, "\x1b[49m");
@@ -570,7 +571,7 @@ export default function createExtension(pi: ExtensionAPI) {
 						lines = [...lines, footerLine];
 					}
 
-					const backgroundColor = resolveBaseTextColor(settings.display.backgroundColor);
+					const backgroundColor = resolveBackgroundColor(settings.display.backgroundColor);
 					return applyBackground(lines, theme, backgroundColor, safeWidth);
 				},
 				invalidate() {},

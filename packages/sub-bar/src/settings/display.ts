@@ -16,6 +16,7 @@ import type {
 	DividerBlanks,
 	ProviderLabel,
 	BaseTextColor,
+	WidgetBackgroundColor,
 	ResetTimeFormat,
 	ResetTimerContainment,
 	StatusIndicatorMode,
@@ -25,8 +26,10 @@ import type {
 } from "../settings-types.js";
 import {
 	BASE_COLOR_OPTIONS,
+	WIDGET_BACKGROUND_OPTIONS,
 	DIVIDER_COLOR_OPTIONS,
 	normalizeBaseTextColor,
+	normalizeBackgroundColor,
 	normalizeDividerColor,
 } from "../settings-types.js";
 import { CUSTOM_OPTION } from "../ui/settings-list.js";
@@ -174,8 +177,8 @@ export function buildDisplayColorItems(settings: Settings): SettingItem[] {
 		{
 			id: "backgroundColor",
 			label: "Background Color",
-			currentValue: normalizeBaseTextColor(settings.display.backgroundColor),
-			values: [...BASE_COLOR_OPTIONS] as BaseTextColor[],
+			currentValue: normalizeBackgroundColor(settings.display.backgroundColor),
+			values: [...WIDGET_BACKGROUND_OPTIONS] as WidgetBackgroundColor[],
 			description: "Background color for the widget line.",
 		},
 		{
@@ -629,7 +632,7 @@ export function applyDisplayChange(settings: Settings, id: string, value: string
 			settings.display.baseTextColor = normalizeBaseTextColor(value);
 			break;
 		case "backgroundColor":
-			settings.display.backgroundColor = normalizeBaseTextColor(value);
+			settings.display.backgroundColor = normalizeBackgroundColor(value);
 			break;
 		case "showUsageLabels":
 			settings.display.showUsageLabels = value === "on";

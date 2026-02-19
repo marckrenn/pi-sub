@@ -4,7 +4,7 @@ import type { Theme } from "@mariozechner/pi-coding-agent";
 import { visibleWidth } from "@mariozechner/pi-tui";
 import { formatUsageStatus, formatUsageWindowParts } from "../src/formatting.js";
 import { buildDisplayShareString, decodeDisplayShareString } from "../src/share.js";
-import { applyDisplayChange } from "../src/settings/display.js";
+import { applyDisplayChange, buildDisplayColorItems } from "../src/settings/display.js";
 import { buildDisplayThemeItems, saveDisplayTheme, upsertDisplayTheme } from "../src/settings/themes.js";
 import { getDefaultSettings, resolveBaseTextColor } from "../src/settings-types.js";
 import type { UsageSnapshot } from "../src/types.js";
@@ -168,6 +168,20 @@ test("applyDisplayChange supports fill and numeric values", () => {
 	assert.equal(settings.display.dividerBlanks, "fill");
 	applyDisplayChange(settings, "dividerBlanks", "3");
 	assert.equal(settings.display.dividerBlanks, 3);
+});
+
+test("background color accepts none", () => {
+	const settings = getDefaultSettings();
+	applyDisplayChange(settings, "backgroundColor", "none");
+	assert.equal(settings.display.backgroundColor, "none");
+});
+
+test("display color items include none for background", () => {
+	const settings = getDefaultSettings();
+	const items = buildDisplayColorItems(settings);
+	const backgroundItem = items.find((item) => item.id === "backgroundColor");
+	assert.ok(backgroundItem);
+	assert.ok(backgroundItem.values?.includes("none"));
 });
 
 test("status icon pack parsing handles preview labels", () => {

@@ -100,6 +100,7 @@ Legacy cache files next to the extension entry or in the agent root are migrated
 | OpenAI Codex | Primary/secondary windows | ✅ | Credits not yet supported (PRs welcome!) |
 | AWS Kiro | Credits | - | Credits not yet supported (PRs welcome!) |
 | z.ai | Tokens/monthly limits | - | API quota limits |
+| MiniMax | 5h/Week windows | - | Token Plan API key required |
 
 ## Development
 

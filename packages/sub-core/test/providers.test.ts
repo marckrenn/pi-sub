@@ -7,6 +7,7 @@ import { AntigravityProvider } from "../src/providers/impl/antigravity.js";
 import { CodexProvider } from "../src/providers/impl/codex.js";
 import { KiroProvider } from "../src/providers/impl/kiro.js";
 import { ZaiProvider } from "../src/providers/impl/zai.js";
+import { MiniMaxProvider } from "../src/providers/impl/minimax.js";
 import { createDeps, createJsonResponse, getAuthPath } from "./helpers.js";
 import type { UsageSnapshot } from "../src/types.js";
 
@@ -382,4 +383,127 @@ test("zai reports api errors and parses limits", async () => {
 	const usage = await provider.fetchUsage(okDeps);
 	assertWindow(usage, "Tokens");
 	assertWindow(usage, "Monthly");
+});
+
+// MiniMax tests
+
+const MINIMAX_RESPONSE = {
+	model_remains: [
+		{
+			model_name: "MiniMax-M*",
+			current_interval_total_count: 4500,
+			current_interval_usage_count: 4195, // remaining, not consumed
+			remains_time: 7_200_000,            // 2 hours in ms
+			current_weekly_total_count: 45_000,
+			current_weekly_usage_count: 41_898, // remaining, not consumed
+			weekly_end_time: Date.now() + 6 * 24 * 60 * 60 * 1000,
+		},
+	],
+};
+
+test("minimax reads key from MINIMAX_API_KEY env var", async () => {
+	const provider = new MiniMaxProvider();
+	let authorization: string | undefined;
+
+	const { deps } = createDeps({
+		env: { MINIMAX_API_KEY: "env-key" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse(MINIMAX_RESPONSE);
+		},
+	});
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer env-key");
+});
+
+test("minimax reads key from auth.json", async () => {
+	const provider = new MiniMaxProvider();
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse(MINIMAX_RESPONSE);
+		},
+	});
+	withAuth(files, { minimax: { key: "file-key" } }, deps.homedir());
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer file-key");
+});
+
+test("minimax env key overrides auth.json", async () => {
+	const provider = new MiniMaxProvider();
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		env: { MINIMAX_API_KEY: "env-key" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse(MINIMAX_RESPONSE);
+		},
+	});
+	withAuth(files, { minimax: { key: "file-key" } }, deps.homedir());
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer env-key");
+});
+
+test("minimax returns no-credentials when key is absent", async () => {
+	const provider = new MiniMaxProvider();
+	const { deps } = createDeps({ fetch: async () => createJsonResponse({}) });
+	assert.equal(provider.hasCredentials(deps), false);
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.windows.length, 0);
+	assert.equal(usage.error?.code, "NO_CREDENTIALS");
+});
+
+test("minimax parses 5h and Week windows correctly", async () => {
+	const provider = new MiniMaxProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse(MINIMAX_RESPONSE),
+	});
+	withAuth(files, { minimax: { key: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+
+	assertWindow(usage, "5h");
+	assertWindow(usage, "Week");
+
+	const fiveHr = usage.windows.find((w) => w.label === "5h")!;
+	// usedPercent = round((4500 - 4195) / 4500 * 100) = round(6.78) = 7
+	assert.equal(fiveHr.usedPercent, 7);
+	assert.ok(fiveHr.resetDescription, "5h window should have a reset description");
+	assert.ok(fiveHr.resetAt, "5h window should have a resetAt timestamp");
+
+	const week = usage.windows.find((w) => w.label === "Week")!;
+	// usedPercent = round((45000 - 41898) / 45000 * 100) = round(6.89) = 7
+	assert.equal(week.usedPercent, 7);
+	assert.ok(week.resetDescription, "Week window should have a reset description");
+});
+
+test("minimax returns fetch-failed on HTTP error", async () => {
+	const provider = new MiniMaxProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({}, { ok: false, status: 429 }),
+	});
+	withAuth(files, { minimax: { key: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.windows.length, 0);
+	assert.equal(usage.error?.code, "HTTP_ERROR");
+});
+
+test("minimax returns empty windows when response has no text model entry", async () => {
+	const provider = new MiniMaxProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({ model_remains: [] }),
+	});
+	withAuth(files, { minimax: { key: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.windows.length, 0);
+	assert.equal(usage.error, undefined); // credentials were fine, model just not in plan
 });

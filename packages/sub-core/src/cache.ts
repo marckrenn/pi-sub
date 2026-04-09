@@ -436,9 +436,9 @@ export async function fetchWithCache<T extends { usage?: UsageSnapshot; status?:
 	}
 	
 	// Cache is stale or forced refresh, try to acquire lock
-	const lockAcquired = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
-	
-	if (!lockAcquired) {
+	const lockToken = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
+
+	if (!lockToken) {
 		// Another process is fetching, wait and re-check cache
 		const freshEntry = await waitForLockAndRecheck(provider, ttlMs);
 		if (freshEntry) {
@@ -484,8 +484,8 @@ export async function fetchWithCache<T extends { usage?: UsageSnapshot; status?:
 		
 		return result;
 	} finally {
-		if (lockAcquired) {
-			releaseFileLock(LOCK_PATH);
+		if (lockToken) {
+			releaseFileLock(LOCK_PATH, lockToken);
 		}
 	}
 }
@@ -495,8 +495,8 @@ export async function updateCacheStatus(
 	status: ProviderStatus,
 	options?: { statusFetchedAt?: number }
 ): Promise<void> {
-	const lockAcquired = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
-	if (!lockAcquired) {
+	const lockToken = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
+	if (!lockToken) {
 		await waitForLockRelease(LOCK_PATH, 3000);
 	}
 	try {
@@ -513,8 +513,8 @@ export async function updateCacheStatus(
 		emitCacheUpdate(provider, cache[provider]);
 		emitCacheSnapshot(cache);
 	} finally {
-		if (lockAcquired) {
-			releaseFileLock(LOCK_PATH);
+		if (lockToken) {
+			releaseFileLock(LOCK_PATH, lockToken);
 		}
 	}
 }

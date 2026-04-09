@@ -439,12 +439,17 @@ export async function fetchWithCache<T extends { usage?: UsageSnapshot; status?:
 	const lockToken = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
 
 	if (!lockToken) {
-		// Another process is fetching, wait and re-check cache
+		// Another process is fetching. Re-check once, then skip duplicate fetch work.
 		const freshEntry = await waitForLockAndRecheck(provider, ttlMs);
 		if (freshEntry) {
 			return { usage: freshEntry.usage, status: freshEntry.status } as T;
 		}
-		// Timeout or cache still stale, fetch anyway
+		const cache = readCache();
+		const staleEntry = cache[provider];
+		if (staleEntry) {
+			return { usage: staleEntry.usage, status: staleEntry.status } as T;
+		}
+		return {} as T;
 	}
 	
 	try {
@@ -497,7 +502,7 @@ export async function updateCacheStatus(
 ): Promise<void> {
 	const lockToken = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
 	if (!lockToken) {
-		await waitForLockRelease(LOCK_PATH, 3000);
+		return;
 	}
 	try {
 		const cache = readCache();

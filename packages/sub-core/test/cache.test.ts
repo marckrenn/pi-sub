@@ -2,7 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import * as path from "node:path";
-import { CACHE_PATH, onCacheSnapshot, onCacheUpdate, readCache, watchCacheUpdates } from "../src/cache.js";
+import {
+	CACHE_PATH,
+	fetchWithCache,
+	onCacheSnapshot,
+	onCacheUpdate,
+	readCache,
+	updateCacheStatus,
+	watchCacheUpdates,
+} from "../src/cache.js";
 import { getCacheLockPath } from "../src/paths.js";
 
 const LOCK_PATH = getCacheLockPath();
@@ -92,5 +100,58 @@ test("watchCacheUpdates waits for lock release", async () => {
 
 		assert.ok(snapshots.length > 0);
 		assert.ok(updates.includes("copilot"));
+	});
+});
+
+test("fetchWithCache skips duplicate fetch when lock is unavailable", async () => {
+	await withCacheFiles(async () => {
+		if (fs.existsSync(CACHE_PATH)) {
+			fs.unlinkSync(CACHE_PATH);
+		}
+		fs.writeFileSync(LOCK_PATH, JSON.stringify({ token: "other", acquiredAt: Date.now() }), "utf-8");
+		const releaseTimer = setTimeout(() => {
+			if (fs.existsSync(LOCK_PATH)) {
+				fs.unlinkSync(LOCK_PATH);
+			}
+		}, 50);
+
+		let fetchCalls = 0;
+		const result = await fetchWithCache("copilot", 0, async () => {
+			fetchCalls += 1;
+			return {
+				usage: {
+					provider: "copilot" as const,
+					displayName: "Copilot",
+					windows: [],
+				},
+			};
+		});
+		clearTimeout(releaseTimer);
+
+		assert.equal(fetchCalls, 0);
+		assert.equal(result.usage, undefined);
+	});
+});
+
+test("updateCacheStatus skips writes when lock is unavailable", async () => {
+	await withCacheFiles(async () => {
+		const initialCache = {
+			copilot: {
+				fetchedAt: 123,
+				usage: {
+					provider: "copilot",
+					displayName: "Copilot",
+					windows: [],
+				},
+				status: { indicator: "none" as const },
+			},
+		};
+		fs.writeFileSync(CACHE_PATH, JSON.stringify(initialCache), "utf-8");
+		fs.writeFileSync(LOCK_PATH, JSON.stringify({ token: "other", acquiredAt: Date.now() }), "utf-8");
+
+		await updateCacheStatus("copilot", { indicator: "major" });
+
+		const after = JSON.parse(fs.readFileSync(CACHE_PATH, "utf-8")) as typeof initialCache;
+		assert.equal(after.copilot.status?.indicator, "none");
 	});
 });

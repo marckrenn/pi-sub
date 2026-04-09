@@ -141,6 +141,10 @@ const LEGACY_AGENT_LOCK_PATH = getLegacyAgentCacheLockPath();
  * Lock timeout in milliseconds
  */
 const LOCK_TIMEOUT_MS = 5000;
+const CACHE_WRITE_RETRY_ATTEMPTS = 8;
+const CACHE_WRITE_RETRY_DELAY_MS = 25;
+const RETRYABLE_RENAME_ERROR_CODES = new Set(["EPERM", "EACCES", "EBUSY", "ENOTEMPTY"]);
+const SLEEP_ARRAY = new Int32Array(new SharedArrayBuffer(4));
 
 /**
  * Ensure cache directory exists
@@ -223,14 +227,62 @@ function writeCache(cache: Cache): void {
 			updateCacheSnapshot(cache, content, stat?.mtimeMs ?? lastCacheMtimeMs);
 			return;
 		}
-		const tempPath = `${CACHE_PATH}.${process.pid}.tmp`;
+		const tempPath = `${CACHE_PATH}.${process.pid}.${Date.now()}.tmp`;
 		fs.writeFileSync(tempPath, content, "utf-8");
-		fs.renameSync(tempPath, CACHE_PATH);
+		try {
+			renameCacheFileWithRetry(tempPath, CACHE_PATH);
+		} finally {
+			removeTempCacheFile(tempPath);
+		}
 		const stat = fs.statSync(CACHE_PATH, { throwIfNoEntry: false });
 		updateCacheSnapshot(cache, content, stat?.mtimeMs ?? Date.now());
 	} catch (error) {
 		console.error("Failed to write cache:", error);
 	}
+}
+
+function renameCacheFileWithRetry(fromPath: string, toPath: string): void {
+	let lastError: unknown;
+	for (let attempt = 0; attempt < CACHE_WRITE_RETRY_ATTEMPTS; attempt++) {
+		try {
+			fs.renameSync(fromPath, toPath);
+			return;
+		} catch (error) {
+			if (!isRetryableRenameError(error)) {
+				throw error;
+			}
+			lastError = error;
+			if (attempt >= CACHE_WRITE_RETRY_ATTEMPTS - 1) {
+				break;
+			}
+			sleepSync(CACHE_WRITE_RETRY_DELAY_MS * (attempt + 1));
+		}
+	}
+	if (lastError) {
+		throw lastError;
+	}
+	throw new Error("Failed to rename cache file");
+}
+
+function removeTempCacheFile(tempPath: string): void {
+	try {
+		if (fs.existsSync(tempPath)) {
+			fs.unlinkSync(tempPath);
+		}
+	} catch {
+		// Ignore cleanup errors
+	}
+}
+
+function isRetryableRenameError(error: unknown): boolean {
+	if (!error || typeof error !== "object") return false;
+	const code = "code" in error ? (error as { code?: unknown }).code : undefined;
+	return typeof code === "string" && RETRYABLE_RENAME_ERROR_CODES.has(code);
+}
+
+function sleepSync(ms: number): void {
+	if (ms <= 0) return;
+	Atomics.wait(SLEEP_ARRAY, 0, 0, ms);
 }
 
 export interface CacheWatchOptions {

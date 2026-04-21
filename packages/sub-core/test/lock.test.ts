@@ -24,17 +24,24 @@ function createMemoryStorage(): { storage: StorageAdapter; files: Map<string, st
 	return { storage, files };
 }
 
-test("tryAcquireFileLock overrides stale locks", () => {
+test("tryAcquireFileLock replaces stale locks with owned tokens", () => {
 	const { storage, files } = createMemoryStorage();
 	const originalStorage = getStorage();
 	setStorage(storage);
 
 	try {
 		const lockPath = "/tmp/lock";
-		assert.ok(tryAcquireFileLock(lockPath, 10));
+		const firstToken = tryAcquireFileLock(lockPath, 10);
+		assert.ok(firstToken);
 		files.set(lockPath, String(Date.now() - 1000));
-		assert.ok(tryAcquireFileLock(lockPath, 10));
-		releaseFileLock(lockPath);
+		const secondToken = tryAcquireFileLock(lockPath, 10);
+		assert.ok(secondToken);
+		assert.notEqual(secondToken, firstToken);
+
+		releaseFileLock(lockPath, firstToken ?? undefined);
+		assert.equal(files.has(lockPath), true);
+
+		releaseFileLock(lockPath, secondToken ?? undefined);
 		assert.equal(files.has(lockPath), false);
 	} finally {
 		setStorage(originalStorage);

@@ -141,6 +141,10 @@ const LEGACY_AGENT_LOCK_PATH = getLegacyAgentCacheLockPath();
  * Lock timeout in milliseconds
  */
 const LOCK_TIMEOUT_MS = 5000;
+const CACHE_WRITE_RETRY_ATTEMPTS = 8;
+const CACHE_WRITE_RETRY_DELAY_MS = 25;
+const RETRYABLE_RENAME_ERROR_CODES = new Set(["EPERM", "EACCES", "EBUSY", "ENOTEMPTY"]);
+const SLEEP_ARRAY = new Int32Array(new SharedArrayBuffer(4));
 
 /**
  * Ensure cache directory exists
@@ -223,14 +227,62 @@ function writeCache(cache: Cache): void {
 			updateCacheSnapshot(cache, content, stat?.mtimeMs ?? lastCacheMtimeMs);
 			return;
 		}
-		const tempPath = `${CACHE_PATH}.${process.pid}.tmp`;
+		const tempPath = `${CACHE_PATH}.${process.pid}.${Date.now()}.tmp`;
 		fs.writeFileSync(tempPath, content, "utf-8");
-		fs.renameSync(tempPath, CACHE_PATH);
+		try {
+			renameCacheFileWithRetry(tempPath, CACHE_PATH);
+		} finally {
+			removeTempCacheFile(tempPath);
+		}
 		const stat = fs.statSync(CACHE_PATH, { throwIfNoEntry: false });
 		updateCacheSnapshot(cache, content, stat?.mtimeMs ?? Date.now());
 	} catch (error) {
 		console.error("Failed to write cache:", error);
 	}
+}
+
+function renameCacheFileWithRetry(fromPath: string, toPath: string): void {
+	let lastError: unknown;
+	for (let attempt = 0; attempt < CACHE_WRITE_RETRY_ATTEMPTS; attempt++) {
+		try {
+			fs.renameSync(fromPath, toPath);
+			return;
+		} catch (error) {
+			if (!isRetryableRenameError(error)) {
+				throw error;
+			}
+			lastError = error;
+			if (attempt >= CACHE_WRITE_RETRY_ATTEMPTS - 1) {
+				break;
+			}
+			sleepSync(CACHE_WRITE_RETRY_DELAY_MS * (attempt + 1));
+		}
+	}
+	if (lastError) {
+		throw lastError;
+	}
+	throw new Error("Failed to rename cache file");
+}
+
+function removeTempCacheFile(tempPath: string): void {
+	try {
+		if (fs.existsSync(tempPath)) {
+			fs.unlinkSync(tempPath);
+		}
+	} catch {
+		// Ignore cleanup errors
+	}
+}
+
+function isRetryableRenameError(error: unknown): boolean {
+	if (!error || typeof error !== "object") return false;
+	const code = "code" in error ? (error as { code?: unknown }).code : undefined;
+	return typeof code === "string" && RETRYABLE_RENAME_ERROR_CODES.has(code);
+}
+
+function sleepSync(ms: number): void {
+	if (ms <= 0) return;
+	Atomics.wait(SLEEP_ARRAY, 0, 0, ms);
 }
 
 export interface CacheWatchOptions {
@@ -384,15 +436,20 @@ export async function fetchWithCache<T extends { usage?: UsageSnapshot; status?:
 	}
 	
 	// Cache is stale or forced refresh, try to acquire lock
-	const lockAcquired = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
-	
-	if (!lockAcquired) {
-		// Another process is fetching, wait and re-check cache
+	const lockToken = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
+
+	if (!lockToken) {
+		// Another process is fetching. Re-check once, then skip duplicate fetch work.
 		const freshEntry = await waitForLockAndRecheck(provider, ttlMs);
 		if (freshEntry) {
 			return { usage: freshEntry.usage, status: freshEntry.status } as T;
 		}
-		// Timeout or cache still stale, fetch anyway
+		const cache = readCache();
+		const staleEntry = cache[provider];
+		if (staleEntry) {
+			return { usage: staleEntry.usage, status: staleEntry.status } as T;
+		}
+		return {} as T;
 	}
 	
 	try {
@@ -432,8 +489,8 @@ export async function fetchWithCache<T extends { usage?: UsageSnapshot; status?:
 		
 		return result;
 	} finally {
-		if (lockAcquired) {
-			releaseFileLock(LOCK_PATH);
+		if (lockToken) {
+			releaseFileLock(LOCK_PATH, lockToken);
 		}
 	}
 }
@@ -443,9 +500,9 @@ export async function updateCacheStatus(
 	status: ProviderStatus,
 	options?: { statusFetchedAt?: number }
 ): Promise<void> {
-	const lockAcquired = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
-	if (!lockAcquired) {
-		await waitForLockRelease(LOCK_PATH, 3000);
+	const lockToken = tryAcquireFileLock(LOCK_PATH, LOCK_TIMEOUT_MS);
+	if (!lockToken) {
+		return;
 	}
 	try {
 		const cache = readCache();
@@ -461,8 +518,8 @@ export async function updateCacheStatus(
 		emitCacheUpdate(provider, cache[provider]);
 		emitCacheSnapshot(cache);
 	} finally {
-		if (lockAcquired) {
-			releaseFileLock(LOCK_PATH);
+		if (lockToken) {
+			releaseFileLock(LOCK_PATH, lockToken);
 		}
 	}
 }

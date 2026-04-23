@@ -2,7 +2,7 @@
  * Shared types and metadata for sub-* extensions.
  */
 
-export const PROVIDERS = ["anthropic", "copilot", "gemini", "antigravity", "codex", "kiro", "zai"] as const;
+export const PROVIDERS = ["anthropic", "copilot", "gemini", "antigravity", "codex", "kiro", "zai", "kimi-coding"] as const;
 
 export type ProviderName = (typeof PROVIDERS)[number];
 
@@ -73,6 +73,7 @@ export interface CoreProviderSettingsMap {
 	codex: CoreProviderSettings;
 	kiro: CoreProviderSettings;
 	zai: CoreProviderSettings;
+	"kimi-coding": CoreProviderSettings;
 }
 
 export interface BehaviorSettings {
@@ -193,6 +194,10 @@ export const PROVIDER_METADATA: Record<ProviderName, ProviderMetadata> = {
 	zai: {
 		displayName: "z.ai",
 		detection: { providerTokens: ["zai", "z.ai", "xai"], modelTokens: [] },
+	},
+	"kimi-coding": {
+		displayName: "Kimi for Coding",
+		detection: { providerTokens: ["kimi"], modelTokens: ["kimi-for-coding"] },
 	},
 };
 

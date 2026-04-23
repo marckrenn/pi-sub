@@ -14,6 +14,7 @@ import type {
 	CodexProviderSettings,
 	KiroProviderSettings,
 	ZaiProviderSettings,
+	KimiCodingProviderSettings,
 } from "../settings-types.js";
 
 function buildBaseProviderItems(ps: BaseProviderSettings): SettingItem[] {
@@ -225,6 +226,26 @@ export function buildProviderSettingsItems(settings: Settings, provider: Provide
 		);
 	}
 
+	if (provider === "kimi-coding") {
+		const kimiSettings = ps as KimiCodingProviderSettings;
+		items.push(
+			{
+				id: "showWeek",
+				label: "Show Week Window",
+				currentValue: kimiSettings.windows.showWeek ? "on" : "off",
+				values: ["on", "off"],
+				description: "Show the weekly usage window.",
+			},
+			{
+				id: "show5h",
+				label: "Show 5h Window",
+				currentValue: kimiSettings.windows.show5h ? "on" : "off",
+				values: ["on", "off"],
+				description: "Show the 5-hour usage window.",
+			},
+		);
+	}
+
 	return items;
 }
 
@@ -351,6 +372,18 @@ export function applyProviderSettingsChange(
 				break;
 			case "showMonthly":
 				zaiSettings.windows.showMonthly = value === "on";
+				break;
+		}
+	}
+
+	if (provider === "kimi-coding") {
+		const kimiSettings = ps as KimiCodingProviderSettings;
+		switch (id) {
+			case "showWeek":
+				kimiSettings.windows.showWeek = value === "on";
+				break;
+			case "show5h":
+				kimiSettings.windows.show5h = value === "on";
 				break;
 		}
 	}

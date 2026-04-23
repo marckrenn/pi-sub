@@ -9,6 +9,7 @@ export { AntigravityProvider } from "./impl/antigravity.js";
 export { CodexProvider } from "./impl/codex.js";
 export { KiroProvider } from "./impl/kiro.js";
 export { ZaiProvider } from "./impl/zai.js";
+export { KimiCodingProvider } from "./impl/kimi-coding.js";
 
 import type { Dependencies, ProviderName } from "../types.js";
 import type { UsageProvider } from "../provider.js";
@@ -20,6 +21,7 @@ import { AntigravityProvider } from "./impl/antigravity.js";
 import { CodexProvider } from "./impl/codex.js";
 import { KiroProvider } from "./impl/kiro.js";
 import { ZaiProvider } from "./impl/zai.js";
+import { KimiCodingProvider } from "./impl/kimi-coding.js";
 
 const PROVIDER_FACTORIES: Record<ProviderName, () => UsageProvider> = {
 	anthropic: () => new AnthropicProvider(),
@@ -29,6 +31,7 @@ const PROVIDER_FACTORIES: Record<ProviderName, () => UsageProvider> = {
 	codex: () => new CodexProvider(),
 	kiro: () => new KiroProvider(),
 	zai: () => new ZaiProvider(),
+	"kimi-coding": () => new KimiCodingProvider(),
 };
 
 /**

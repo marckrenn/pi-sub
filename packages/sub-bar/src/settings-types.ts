@@ -274,6 +274,13 @@ export interface ZaiProviderSettings extends BaseProviderSettings {
 	};
 }
 
+export interface KimiCodingProviderSettings extends BaseProviderSettings {
+	windows: {
+		showWeek: boolean;
+		show5h: boolean;
+	};
+}
+
 export interface ProviderSettingsMap {
 	anthropic: AnthropicProviderSettings;
 	copilot: CopilotProviderSettings;
@@ -282,6 +289,7 @@ export interface ProviderSettingsMap {
 	codex: CodexProviderSettings;
 	kiro: KiroProviderSettings;
 	zai: ZaiProviderSettings;
+	"kimi-coding": KimiCodingProviderSettings;
 }
 
 export type { BehaviorSettings, CoreSettings } from "@marckrenn/pi-sub-shared";
@@ -486,6 +494,13 @@ export function getDefaultSettings(): Settings {
 				windows: {
 					showTokens: true,
 					showMonthly: true,
+				},
+			},
+			"kimi-coding": {
+				showStatus: true,
+				windows: {
+					showWeek: true,
+					show5h: true,
 				},
 			},
 		},

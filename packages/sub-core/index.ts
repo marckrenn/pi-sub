@@ -475,15 +475,15 @@ export default function createExtension(pi: ExtensionAPI, deps: Dependencies = c
 
 	pi.on("tool_result", async (_event, ctx) => {
 		if (settings.behavior.refreshOnToolResult) {
-			await refresh(ctx, { force: true });
+			await refresh(ctx);
 		}
 		if (settings.statusRefresh.refreshOnToolResult) {
-			await refreshStatus(ctx, { force: true });
+			await refreshStatus(ctx);
 		}
 	});
 
 	pi.on("turn_end", async (_event, ctx) => {
-		await refresh(ctx, { force: true });
+		await refresh(ctx);
 	});
 
 	pi.on("session_switch", async (_event, ctx) => {

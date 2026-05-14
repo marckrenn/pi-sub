@@ -22,3 +22,13 @@ test("detectProviderFromModel handles overlapping provider tokens", () => {
 	const provider = detectProviderFromModel({ provider: "z.ai", id: "model" });
 	assert.equal(provider, "zai");
 });
+
+test("detectProviderFromModel detects openrouter by provider", () => {
+	const provider = detectProviderFromModel({ provider: "openrouter", id: "openrouter/auto" });
+	assert.equal(provider, "openrouter");
+});
+
+test("detectProviderFromModel detects openrouter case-insensitively", () => {
+	const provider = detectProviderFromModel({ provider: "OpenRouter", id: "meta-llama" });
+	assert.equal(provider, "openrouter");
+});

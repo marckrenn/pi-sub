@@ -14,6 +14,7 @@ import type {
 	CodexProviderSettings,
 	KiroProviderSettings,
 	ZaiProviderSettings,
+	OpenRouterProviderSettings,
 } from "../settings-types.js";
 
 function buildBaseProviderItems(ps: BaseProviderSettings): SettingItem[] {
@@ -225,6 +226,33 @@ export function buildProviderSettingsItems(settings: Settings, provider: Provide
 		);
 	}
 
+	if (provider === "openrouter") {
+		const openRouterSettings = ps as OpenRouterProviderSettings;
+		items.push(
+			{
+				id: "showCredits",
+				label: "Show Credits Window",
+				currentValue: openRouterSettings.windows.showCredits ? "on" : "off",
+				values: ["on", "off"],
+				description: "Show the credits usage window.",
+			},
+			{
+				id: "showRemainingCredit",
+				label: "Show Remaining Credit",
+				currentValue: openRouterSettings.showRemainingCredit ? "on" : "off",
+				values: ["on", "off"],
+				description: "Show the remaining OpenRouter credit line.",
+			},
+			{
+				id: "showCreditBreakdown",
+				label: "Show Credit Breakdown",
+				currentValue: openRouterSettings.showCreditBreakdown ? "on" : "off",
+				values: ["on", "off"],
+				description: "Append used/total credit details next to remaining credit.",
+			},
+		);
+	}
+
 	return items;
 }
 
@@ -351,6 +379,21 @@ export function applyProviderSettingsChange(
 				break;
 			case "showMonthly":
 				zaiSettings.windows.showMonthly = value === "on";
+				break;
+		}
+	}
+
+	if (provider === "openrouter") {
+		const openRouterSettings = ps as OpenRouterProviderSettings;
+		switch (id) {
+			case "showCredits":
+				openRouterSettings.windows.showCredits = value === "on";
+				break;
+			case "showRemainingCredit":
+				openRouterSettings.showRemainingCredit = value === "on";
+				break;
+			case "showCreditBreakdown":
+				openRouterSettings.showCreditBreakdown = value === "on";
 				break;
 		}
 	}

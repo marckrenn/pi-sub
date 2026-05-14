@@ -100,6 +100,7 @@ Legacy cache files next to the extension entry or in the agent root are migrated
 | OpenAI Codex | Primary/secondary windows | ✅ | Credits not yet supported (PRs welcome!) |
 | AWS Kiro | Credits | - | Credits not yet supported (PRs welcome!) |
 | z.ai | Tokens/monthly limits | - | API quota limits |
+| OpenRouter | Credits | - | API credits endpoint |
 
 ## Development
 
@@ -115,7 +116,7 @@ Manual paths/symlinks still work for local development as documented above.
 
 ### Tested providers
 
-Tested so far: Anthropic (Claude), OpenAI Codex, GitHub Copilot. Other providers are implemented but not yet verified in production.
+Tested so far: Anthropic (Claude), OpenAI Codex, GitHub Copilot, OpenRouter. Other providers are implemented but not yet verified in production.
 
 ### Adding a Provider
 

@@ -24,6 +24,11 @@ export { MODEL_MULTIPLIERS } from "@marckrenn/pi-sub-shared";
 export const API_TIMEOUT_MS = 5000;
 
 /**
+ * OpenRouter credits endpoint
+ */
+export const OPENROUTER_CREDITS_URL = "https://openrouter.ai/api/v1/credits";
+
+/**
  * Timeout for CLI commands in milliseconds
  */
 export const CLI_TIMEOUT_MS = 10000;

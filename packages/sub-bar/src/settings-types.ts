@@ -274,6 +274,14 @@ export interface ZaiProviderSettings extends BaseProviderSettings {
 	};
 }
 
+export interface OpenRouterProviderSettings extends BaseProviderSettings {
+	showRemainingCredit: boolean;
+	showCreditBreakdown: boolean;
+	windows: {
+		showCredits: boolean;
+	};
+}
+
 export interface ProviderSettingsMap {
 	anthropic: AnthropicProviderSettings;
 	copilot: CopilotProviderSettings;
@@ -282,6 +290,7 @@ export interface ProviderSettingsMap {
 	codex: CodexProviderSettings;
 	kiro: KiroProviderSettings;
 	zai: ZaiProviderSettings;
+	openrouter: OpenRouterProviderSettings;
 }
 
 export type { BehaviorSettings, CoreSettings } from "@marckrenn/pi-sub-shared";
@@ -486,6 +495,14 @@ export function getDefaultSettings(): Settings {
 				windows: {
 					showTokens: true,
 					showMonthly: true,
+				},
+			},
+			openrouter: {
+				showStatus: false,
+				showRemainingCredit: true,
+				showCreditBreakdown: false,
+				windows: {
+					showCredits: true,
 				},
 			},
 		},

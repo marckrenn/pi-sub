@@ -14,6 +14,17 @@ function buildCopilotUsage(): UsageSnapshot {
 	};
 }
 
+function buildOpenRouterUsage(): UsageSnapshot {
+	return {
+		provider: "openrouter",
+		displayName: "OpenRouter Credits",
+		windows: [],
+		creditTotal: 20,
+		creditUsage: 7.25,
+		creditRemaining: 12.75,
+	};
+}
+
 test("copilot extras include multiplier and requests left", () => {
 	const settings = getDefaultSettings();
 	settings.providers.copilot.showMultiplier = true;
@@ -39,4 +50,29 @@ test("copilot extras respect toggle settings", () => {
 	assert.equal(withMultiplierOnly.length, 1);
 	assert.ok(withMultiplierOnly[0].label.includes("Model multiplier: 0x"));
 	assert.ok(!withMultiplierOnly[0].label.includes("req. left"));
+});
+
+test("openrouter extras show remaining credit by default", () => {
+	const settings = getDefaultSettings();
+
+	const extras = getUsageExtras(buildOpenRouterUsage(), settings);
+	assert.equal(extras.length, 1);
+	assert.equal(extras[0].label, "$12.75 left");
+});
+
+test("openrouter extras can include breakdown", () => {
+	const settings = getDefaultSettings();
+	settings.providers.openrouter.showCreditBreakdown = true;
+
+	const extras = getUsageExtras(buildOpenRouterUsage(), settings);
+	assert.equal(extras.length, 1);
+	assert.equal(extras[0].label, "$12.75 left ($7.25/$20.00 used)");
+});
+
+test("openrouter extras respect showRemainingCredit toggle", () => {
+	const settings = getDefaultSettings();
+	settings.providers.openrouter.showRemainingCredit = false;
+
+	const extras = getUsageExtras(buildOpenRouterUsage(), settings);
+	assert.equal(extras.length, 0);
 });

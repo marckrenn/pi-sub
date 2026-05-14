@@ -137,6 +137,18 @@ const zaiWindowVisible: ProviderMetadata["isWindowVisible"] = (_usage, window, s
 	return true;
 };
 
+const openrouterWindowVisible: ProviderMetadata["isWindowVisible"] = (_usage, window, settings, _model) => {
+	if (!settings) return true;
+	const ps = settings.providers.openrouter;
+	if (window.label === "Credits") return ps.windows.showCredits;
+	return true;
+};
+
+function formatUsd(value: number, digits: number): string {
+	const safeValue = Object.is(value, -0) ? 0 : value;
+	return `$${safeValue.toFixed(digits)}`;
+}
+
 const anthropicExtras: ProviderMetadata["getExtras"] = (usage, settings) => {
 	const extras: UsageExtra[] = [];
 	const showExtraWindow = settings?.providers.anthropic.windows.showExtra ?? true;
@@ -162,6 +174,34 @@ const copilotExtras: ProviderMetadata["getExtras"] = (usage, settings, modelId) 
 		}
 		extras.push({ label: multiplierStr });
 	}
+	return extras;
+};
+
+const openrouterExtras: ProviderMetadata["getExtras"] = (usage, settings) => {
+	const extras: UsageExtra[] = [];
+	const showRemainingCredit = settings?.providers.openrouter.showRemainingCredit ?? true;
+	const showCreditBreakdown = settings?.providers.openrouter.showCreditBreakdown ?? false;
+	if (!showRemainingCredit) return extras;
+
+	const remaining = usage.creditRemaining;
+	if (remaining === undefined) return extras;
+
+	const remainingLabel = formatUsd(remaining, remaining >= 1 ? 2 : 4);
+	if (!showCreditBreakdown) {
+		extras.push({ label: `${remainingLabel} left` });
+		return extras;
+	}
+
+	const total = usage.creditTotal;
+	const used = usage.creditUsage;
+	if (total === undefined || used === undefined) {
+		extras.push({ label: `${remainingLabel} left` });
+		return extras;
+	}
+
+	const usedLabel = formatUsd(used, 2);
+	const totalLabel = formatUsd(total, 2);
+	extras.push({ label: `${remainingLabel} left (${usedLabel}/${totalLabel} used)` });
 	return extras;
 };
 
@@ -195,5 +235,10 @@ export const PROVIDER_METADATA: Record<ProviderName, ProviderMetadata> = {
 	zai: {
 		...BASE_METADATA.zai,
 		isWindowVisible: zaiWindowVisible,
+	},
+	openrouter: {
+		...BASE_METADATA.openrouter,
+		isWindowVisible: openrouterWindowVisible,
+		getExtras: openrouterExtras,
 	},
 };

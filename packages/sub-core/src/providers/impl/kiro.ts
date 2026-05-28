@@ -34,8 +34,8 @@ export class KiroProvider extends BaseProvider {
 				return this.emptySnapshot(notLoggedIn());
 			}
 
-			// Get usage
-			const output = deps.execFileSync(kiroBinary, ["chat", "--no-interactive", "/usage"], {
+			// Get usage (kiro-cli writes to stderr, so redirect via shell)
+			const output = deps.execFileSync("/bin/sh", ["-c", `"${kiroBinary}" chat --no-interactive /usage 2>&1`], {
 				encoding: "utf-8",
 				timeout: CLI_TIMEOUT_MS,
 				env: { ...deps.env, TERM: "xterm-256color" },
@@ -62,11 +62,15 @@ export class KiroProvider extends BaseProvider {
 				}
 			}
 
-			// Parse reset date from "resets on 01/01"
+			// Parse reset date from "resets on 2026-06-01" or "resets on 01/01"
 			let resetsAt: Date | undefined;
-			const resetMatch = stripped.match(/resets on (\d{2}\/\d{2})/);
-			if (resetMatch) {
-				const [month, day] = resetMatch[1].split("/").map(Number);
+			const resetMatchISO = stripped.match(/resets on (\d{4})-(\d{2})-(\d{2})/);
+			const resetMatchSlash = stripped.match(/resets on (\d{2})\/(\d{2})/);
+			if (resetMatchISO) {
+				const [, y, m, d] = resetMatchISO;
+				resetsAt = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+			} else if (resetMatchSlash) {
+				const [month, day] = [parseInt(resetMatchSlash[1]), parseInt(resetMatchSlash[2])];
 				const now = new Date();
 				const year = now.getFullYear();
 				resetsAt = new Date(year, month - 1, day);

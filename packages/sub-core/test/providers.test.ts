@@ -317,14 +317,14 @@ test("codex includes additional rate limits for model-specific usage", async () 
 	assertWindow(usage, "GPT-5.3-Codex-Spark Week");
 });
 
-test("kiro parses percentage and reset date", async () => {
+test("kiro parses percentage and reset date (MM/DD)", async () => {
 	const provider = new KiroProvider();
 	const output = "██████ 12%\nresets on 01/01";
 	const { deps } = createDeps({
 		execFileSync: (file: string, args: string[]) => {
 			if (file === "which" && args[0] === "kiro-cli") return "/usr/local/bin/kiro-cli";
 			if (file === "/usr/local/bin/kiro-cli" && args[0] === "whoami") return "user";
-			if (file === "/usr/local/bin/kiro-cli" && args[0] === "chat") return output;
+			if (file === "/bin/sh" && args[0] === "-c") return output;
 			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
 		},
 	});
@@ -335,6 +335,24 @@ test("kiro parses percentage and reset date", async () => {
 	assert.ok(usage.windows[0]?.resetAt);
 });
 
+test("kiro parses percentage and reset date (YYYY-MM-DD)", async () => {
+	const provider = new KiroProvider();
+	const output = "██████████████████████████████████ 42%\nresets on 2026-06-01";
+	const { deps } = createDeps({
+		execFileSync: (file: string, args: string[]) => {
+			if (file === "which" && args[0] === "kiro-cli") return "/usr/local/bin/kiro-cli";
+			if (file === "/usr/local/bin/kiro-cli" && args[0] === "whoami") return "user";
+			if (file === "/bin/sh" && args[0] === "-c") return output;
+			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
+		},
+	});
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "Credits");
+	assert.equal(usage.windows[0]?.usedPercent, 42);
+	assert.ok(usage.windows[0]?.resetAt);
+});
+
 test("kiro parses credits when percent is missing", async () => {
 	const provider = new KiroProvider();
 	const output = "(1.5 of 10 covered in plan) resets on 12/31";
@@ -342,7 +360,7 @@ test("kiro parses credits when percent is missing", async () => {
 		execFileSync: (file: string, args: string[]) => {
 			if (file === "which" && args[0] === "kiro-cli") return "/usr/local/bin/kiro-cli";
 			if (file === "/usr/local/bin/kiro-cli" && args[0] === "whoami") return "user";
-			if (file === "/usr/local/bin/kiro-cli" && args[0] === "chat") return output;
+			if (file === "/bin/sh" && args[0] === "-c") return output;
 			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
 		},
 	});

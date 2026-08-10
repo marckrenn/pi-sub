@@ -1,62 +1,62 @@
 # Release Process
 
-This repo uses Changesets + a manual GitHub Actions workflow to ship releases.
+This repo uses Changesets + GitHub Actions to ship npm releases automatically after merges to `main`.
 
-## 1) Prepare the release branch (optional)
-If bundling multiple PRs, create a release branch and merge feature branches into it:
+## One-time setup
 
-```bash
-git checkout main
-git pull
-git checkout -b release-<version>
+1. **npm Trusted Publishing**
+   - In npm, grant this repo permission to publish each `@eiei114/pi-sub-*` package from `.github/workflows/release.yml`.
+   - This workflow already requests `id-token: write`, so no `NPM_TOKEN` secret is required when Trusted Publishing is configured.
+2. **Enable GitHub auto-merge**
+   - Repo Settings → Pull Requests → enable **Allow auto-merge**.
+   - The release workflow turns on auto-merge for the bot-created `Version Packages` PR after Changesets opens it.
 
-git merge --no-ff <feature-branch>
-# repeat as needed
-```
+## Normal release flow
 
-Open a PR from `release-<version>` → `main`.
+### 1) Add a changeset in the feature PR
 
-## 2) Add a changeset
-From your release branch (or feature branch if not bundling):
+From your branch:
 
 ```bash
 npm run changeset
 ```
 
-- Choose **patch** for `@marckrenn/pi-sub-bar` / `@marckrenn/pi-sub-core` / `@marckrenn/pi-sub-shared`.
-- These packages are a **fixed group**, so one changeset bumps all three together.
+- Pick the packages that changed.
+- `@eiei114/pi-sub-core`, `@eiei114/pi-sub-bar`, and `@eiei114/pi-sub-shared` are a **fixed group**, so one changeset bumps them together.
+- If only docs/CI changed and you do **not** want a publish, skip the changeset.
 
-Commit and push the changeset.
+Commit the generated `.changeset/*.md` file in the same PR.
 
-## 3) Merge to main
-Merge the PR to `main` after review. Run tests beforehand:
+### 2) Merge the feature PR to `main`
+
+On every push to `main`, `.github/workflows/release.yml` runs automatically.
+
+- If unreleased changesets exist, Changesets creates or updates a **Version Packages** PR.
+- The same workflow immediately enables auto-merge for that PR with `gh pr merge --auto --squash`.
+
+### 3) Let the Version Packages PR merge itself
+
+When checks pass, GitHub auto-merges the `Version Packages` PR.
+
+### 4) Publish happens automatically
+
+The merge of the `Version Packages` PR pushes to `main` again, so `release.yml` runs a second time.
+
+- This time there are no pending changesets, so Changesets publishes the changed packages to npm.
+- Changesets also creates package tags / GitHub releases for the published packages.
+
+## Local verification before merge
+
+Recommended before merging a release-affecting PR:
 
 ```bash
-npm test
+npm ci
+npm run verify
 ```
 
-## 4) Run the Release workflow (phase 1)
-Trigger **Actions → Release (manual)** on `main`.
+## Notes
 
-This creates a **Version Packages** PR with version bumps + changelogs.
-
-## 5) Merge the Version Packages PR
-Review and merge the PR created by Changesets.
-
-## 6) Run the Release workflow again (phase 2)
-Trigger **Actions → Release (manual)** on `main` once more.
-
-This publishes to npm and creates the GitHub release + tag.
-
-## Release notes
-The workflow uses the `packages/sub-bar/CHANGELOG.md` entry for the GitHub release notes.
-If you want custom notes, edit the GitHub release after it’s created.
-
-### Optional local notes file (not committed)
-You can draft a local notes file (ignored by git):
-
-```
-release-notes-<version>.md
-```
-
-Paste its contents into the GitHub release UI if needed.
+- Publish scope is package-aware: only packages affected by the merged changesets are released.
+- Internal dependency bumps are handled by Changesets.
+- If the repo auto-merge setting is off, the workflow cannot arm auto-merge and someone must merge the `Version Packages` PR manually.
+- A separate `pull_request_target` workflow is not used because PRs created with `GITHUB_TOKEN` do not reliably trigger follow-up automation.

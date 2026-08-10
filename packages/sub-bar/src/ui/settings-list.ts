@@ -1,11 +1,11 @@
-import type { Component, SettingItem, SettingsListTheme } from "@mariozechner/pi-tui";
+import type { Component, SettingItem, SettingsListTheme } from "@earendil-works/pi-tui";
 import {
 	Input,
 	fuzzyFilter,
 	truncateToWidth,
 	visibleWidth,
 	wrapTextWithAnsi,
-} from "@mariozechner/pi-tui";
+} from "@earendil-works/pi-tui";
 import { getSettingsKeybindings } from "./keybindings.js";
 
 export interface SettingsListOptions {

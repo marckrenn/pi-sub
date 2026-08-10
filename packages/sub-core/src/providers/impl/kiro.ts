@@ -34,15 +34,22 @@ export class KiroProvider extends BaseProvider {
 				return this.emptySnapshot(notLoggedIn());
 			}
 
-			// Get usage
-			const output = deps.execFileSync(kiroBinary, ["chat", "--no-interactive", "/usage"], {
-				encoding: "utf-8",
-				timeout: CLI_TIMEOUT_MS,
-				env: { ...deps.env, TERM: "xterm-256color" },
-				stdio: ["ignore", "pipe", "pipe"],
-			});
+			// Get usage. kiro-cli writes some usage data to stderr, so capture
+			// both streams. We use the shell-free capture path on purpose so it
+			// works on Windows too — a `/bin/sh -c "... 2>&1"` redirect would
+			// only run on Unix.
+			const { stdout, stderr } = deps.execFileSyncWithStderr(
+				kiroBinary,
+				["chat", "--no-interactive", "/usage"],
+				{
+					encoding: "utf-8",
+					timeout: CLI_TIMEOUT_MS,
+					env: { ...deps.env, TERM: "xterm-256color" },
+					stdio: ["ignore", "pipe", "pipe"],
+				},
+			);
 
-			const stripped = stripAnsi(output);
+			const stripped = stripAnsi(stdout + stderr);
 			const windows: RateWindow[] = [];
 
 			// Parse credits percentage from "████...█ X%"
@@ -62,11 +69,16 @@ export class KiroProvider extends BaseProvider {
 				}
 			}
 
-			// Parse reset date from "resets on 01/01"
+			// Parse reset date from "resets on 2026-06-01" or "resets on 01/01"
 			let resetsAt: Date | undefined;
-			const resetMatch = stripped.match(/resets on (\d{2}\/\d{2})/);
-			if (resetMatch) {
-				const [month, day] = resetMatch[1].split("/").map(Number);
+			const resetMatchISO = stripped.match(/resets on (\d{4})-(\d{2})-(\d{2})/);
+			const resetMatchSlash = stripped.match(/resets on (\d{2})\/(\d{2})/);
+			if (resetMatchISO) {
+				const [, y, m, d] = resetMatchISO;
+				resetsAt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+			} else if (resetMatchSlash) {
+				const month = parseInt(resetMatchSlash[1], 10);
+				const day = parseInt(resetMatchSlash[2], 10);
 				const now = new Date();
 				const year = now.getFullYear();
 				resetsAt = new Date(year, month - 1, day);

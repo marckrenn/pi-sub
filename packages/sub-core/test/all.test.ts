@@ -1,8 +1,12 @@
+import "./cache.test.js";
 import "./detection.test.js";
 import "./providers.test.js";
 import "./prioritize.test.js";
 import "./controller.test.js";
-import "./cache.test.js";
+import "./extension.test.js";
 import "./lock.test.js";
 import "./status.test.js";
 import "./keybindings.test.js";
+import "./changelog-titles.test.js";
+import "./ci-workflow.test.js";
+import "./roadmap-accuracy.test.js";

@@ -2,7 +2,7 @@
  * Usage refresh and provider selection controller.
  */
 
-import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { ProviderName, UsageSnapshot } from "../types.js";
 import type { Settings } from "../settings-types.js";
 import { detectProviderFromModel } from "../providers/detection.js";

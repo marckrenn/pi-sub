@@ -14,9 +14,9 @@ export type {
 	SubCoreState,
 	SubCoreAllState,
 	SubCoreEvents,
-} from "@marckrenn/pi-sub-shared";
+} from "@eiei114/pi-sub-shared";
 
-export { PROVIDERS } from "@marckrenn/pi-sub-shared";
+export { PROVIDERS } from "@eiei114/pi-sub-shared";
 
 export type ModelInfo = {
 	provider?: string;

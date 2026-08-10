@@ -2,7 +2,7 @@
  * Behavior settings UI helpers.
  */
 
-import type { SettingItem } from "@mariozechner/pi-tui";
+import type { SettingItem } from "@earendil-works/pi-tui";
 import type { BehaviorSettings } from "../settings-types.js";
 import { CUSTOM_OPTION } from "../ui/settings-list.js";
 

@@ -1,8 +1,8 @@
 {
   "$schema": "https://unpkg.com/@changesets/config/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "marckrenn/pi-sub" }],
+  "changelog": ["@changesets/changelog-github", { "repo": "eiei114/pi-sub" }],
   "commit": false,
-  "fixed": [["@marckrenn/pi-sub-core", "@marckrenn/pi-sub-bar", "@marckrenn/pi-sub-shared"]],
+  "fixed": [["@eiei114/pi-sub-core", "@eiei114/pi-sub-bar", "@eiei114/pi-sub-shared"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

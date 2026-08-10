@@ -5,10 +5,10 @@
 import type { RateWindow, UsageSnapshot, ProviderName, ModelInfo } from "../types.js";
 import type { Settings } from "../settings-types.js";
 import { getModelMultiplier, normalizeTokens } from "../utils.js";
-import { PROVIDER_METADATA as BASE_METADATA, type ProviderMetadata as BaseProviderMetadata } from "@marckrenn/pi-sub-shared";
+import { PROVIDER_METADATA as BASE_METADATA, type ProviderMetadata as BaseProviderMetadata } from "@eiei114/pi-sub-shared";
 
-export { PROVIDERS, PROVIDER_DISPLAY_NAMES } from "@marckrenn/pi-sub-shared";
-export type { ProviderStatusConfig, ProviderDetectionConfig } from "@marckrenn/pi-sub-shared";
+export { PROVIDERS, PROVIDER_DISPLAY_NAMES } from "@eiei114/pi-sub-shared";
+export type { ProviderStatusConfig, ProviderDetectionConfig } from "@eiei114/pi-sub-shared";
 
 export interface UsageExtra {
 	label: string;
@@ -31,7 +31,9 @@ const anthropicWindowVisible: ProviderMetadata["isWindowVisible"] = (_usage, win
 const copilotWindowVisible: ProviderMetadata["isWindowVisible"] = (_usage, window, settings, _model) => {
 	if (!settings) return true;
 	const ps = settings.providers.copilot;
-	if (window.label === "Month") return ps.windows.showMonth;
+	if (window.label === "Month" || window.label === "Chat" || window.label === "Completions") {
+		return ps.windows.showMonth;
+	}
 	return true;
 };
 
@@ -137,6 +139,26 @@ const zaiWindowVisible: ProviderMetadata["isWindowVisible"] = (_usage, window, s
 	return true;
 };
 
+const kimiCodingWindowVisible: ProviderMetadata["isWindowVisible"] = (_usage, window, settings, _model) => {
+	if (!settings) return true;
+	const ps = settings.providers["kimi-coding"];
+	if (window.label === "Week") return ps.windows.showWeek;
+	if (window.label === "5h") return ps.windows.show5h;
+	return true;
+};
+
+const openrouterWindowVisible: ProviderMetadata["isWindowVisible"] = (_usage, window, settings, _model) => {
+	if (!settings) return true;
+	const ps = settings.providers.openrouter;
+	if (window.label === "Credits") return ps.windows.showCredits;
+	return true;
+};
+
+function formatUsd(value: number, digits: number): string {
+	const safeValue = Object.is(value, -0) ? 0 : value;
+	return `$${safeValue.toFixed(digits)}`;
+}
+
 const anthropicExtras: ProviderMetadata["getExtras"] = (usage, settings) => {
 	const extras: UsageExtra[] = [];
 	const showExtraWindow = settings?.providers.anthropic.windows.showExtra ?? true;
@@ -162,6 +184,34 @@ const copilotExtras: ProviderMetadata["getExtras"] = (usage, settings, modelId) 
 		}
 		extras.push({ label: multiplierStr });
 	}
+	return extras;
+};
+
+const openrouterExtras: ProviderMetadata["getExtras"] = (usage, settings) => {
+	const extras: UsageExtra[] = [];
+	const showRemainingCredit = settings?.providers.openrouter.showRemainingCredit ?? true;
+	const showCreditBreakdown = settings?.providers.openrouter.showCreditBreakdown ?? false;
+	if (!showRemainingCredit) return extras;
+
+	const remaining = usage.creditRemaining;
+	if (remaining === undefined) return extras;
+
+	const remainingLabel = formatUsd(remaining, remaining >= 1 ? 2 : 4);
+	if (!showCreditBreakdown) {
+		extras.push({ label: `${remainingLabel} left` });
+		return extras;
+	}
+
+	const total = usage.creditTotal;
+	const used = usage.creditUsage;
+	if (total === undefined || used === undefined) {
+		extras.push({ label: `${remainingLabel} left` });
+		return extras;
+	}
+
+	const usedLabel = formatUsd(used, 2);
+	const totalLabel = formatUsd(total, 2);
+	extras.push({ label: `${remainingLabel} left (${usedLabel}/${totalLabel} used)` });
 	return extras;
 };
 
@@ -195,5 +245,14 @@ export const PROVIDER_METADATA: Record<ProviderName, ProviderMetadata> = {
 	zai: {
 		...BASE_METADATA.zai,
 		isWindowVisible: zaiWindowVisible,
+	},
+	"kimi-coding": {
+		...BASE_METADATA["kimi-coding"],
+		isWindowVisible: kimiCodingWindowVisible,
+	},
+	openrouter: {
+		...BASE_METADATA.openrouter,
+		isWindowVisible: openrouterWindowVisible,
+		getExtras: openrouterExtras,
 	},
 };

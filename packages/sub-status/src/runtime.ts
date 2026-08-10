@@ -1,5 +1,5 @@
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import type { SubCoreState } from "@marckrenn/pi-sub-shared";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { SubCoreState } from "@eiei114/pi-sub-shared";
 import { formatCompactStatus } from "./format.js";
 
 const STATUS_KEY = "sub-status:usage";
@@ -74,7 +74,7 @@ async function loadSubCoreFactory(
 	importModule: (specifier: string) => Promise<unknown>,
 	logWarning: (message: string, error: unknown) => void
 ): Promise<((api: ExtensionAPI) => void | Promise<void>) | undefined> {
-	const specifiers = [new URL("../node_modules/@marckrenn/pi-sub-core/index.ts", import.meta.url).toString(), "@marckrenn/pi-sub-core"];
+	const specifiers = [new URL("../node_modules/@eiei114/pi-sub-core/index.ts", import.meta.url).toString(), "@eiei114/pi-sub-core"];
 	let failure: unknown = new Error("sub-core module did not export a default extension factory");
 
 	for (const specifier of specifiers) {

@@ -50,6 +50,7 @@ export function formatElapsedSince(timestamp: number): string {
  * Strip ANSI escape codes from a string
  */
 export function stripAnsi(text: string): string {
+	 
 	return text.replace(/\x1B\[[0-9;?]*[A-Za-z]|\x1B\].*?\x07/g, "");
 }
 

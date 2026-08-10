@@ -29,6 +29,20 @@ function loadClaudeToken(deps: Dependencies): string | undefined {
 		// Ignore parse errors
 	}
 
+	// Try Claude Code credentials file (current CLI storage location)
+	const claudeCredentialsPath = path.join(deps.homedir(), ".claude", ".credentials.json");
+	try {
+		if (deps.fileExists(claudeCredentialsPath)) {
+			const data = JSON.parse(deps.readFile(claudeCredentialsPath) ?? "{}");
+			const oauth = data.claudeAiOauth ?? data;
+			if (typeof oauth?.accessToken === "string" && oauth.accessToken.length > 0) {
+				return oauth.accessToken;
+			}
+		}
+	} catch {
+		// Ignore parse errors
+	}
+
 	// Try macOS Keychain (Claude Code credentials)
 	try {
 		const keychainData = deps.execFileSync(
@@ -38,9 +52,9 @@ function loadClaudeToken(deps: Dependencies): string | undefined {
 		).trim();
 		if (keychainData) {
 			const parsed = JSON.parse(keychainData);
-			const scopes = parsed.claudeAiOauth?.scopes || [];
-			if (scopes.includes("user:profile") && parsed.claudeAiOauth?.accessToken) {
-				return parsed.claudeAiOauth.accessToken;
+			const oauth = parsed.claudeAiOauth ?? parsed;
+			if (typeof oauth?.accessToken === "string" && oauth.accessToken.length > 0) {
+				return oauth.accessToken;
 			}
 		}
 	} catch {
@@ -48,6 +62,49 @@ function loadClaudeToken(deps: Dependencies): string | undefined {
 	}
 
 	return undefined;
+}
+
+type AnthropicUsageWindow = {
+	utilization?: number;
+	resets_at?: string;
+};
+
+function pushUsageWindow(
+	windows: RateWindow[],
+	label: string,
+	window?: AnthropicUsageWindow,
+): void {
+	if (window?.utilization === undefined) return;
+	const resetAt = window.resets_at ? new Date(window.resets_at) : undefined;
+	windows.push({
+		label,
+		usedPercent: window.utilization,
+		resetDescription: resetAt ? formatReset(resetAt) : undefined,
+		resetAt: resetAt?.toISOString(),
+	});
+}
+
+function pushWeekWindow(windows: RateWindow[], data: {
+	seven_day?: AnthropicUsageWindow;
+	seven_day_sonnet?: AnthropicUsageWindow;
+	seven_day_opus?: AnthropicUsageWindow;
+	seven_day_oauth_apps?: AnthropicUsageWindow;
+}): void {
+	if (data.seven_day?.utilization !== undefined) {
+		pushUsageWindow(windows, "Week", data.seven_day);
+		return;
+	}
+	if (data.seven_day_sonnet?.utilization !== undefined) {
+		pushUsageWindow(windows, "Week", data.seven_day_sonnet);
+		return;
+	}
+	if (data.seven_day_opus?.utilization !== undefined) {
+		pushUsageWindow(windows, "Week", data.seven_day_opus);
+		return;
+	}
+	if (data.seven_day_oauth_apps?.utilization !== undefined) {
+		pushUsageWindow(windows, "Week", data.seven_day_oauth_apps);
+	}
 }
 
 type ExtraUsageFormat = {
@@ -102,8 +159,11 @@ export class AnthropicProvider extends BaseProvider {
 			}
 
 			const data = (await res.json()) as {
-				five_hour?: { utilization?: number; resets_at?: string };
-				seven_day?: { utilization?: number; resets_at?: string };
+				five_hour?: AnthropicUsageWindow;
+				seven_day?: AnthropicUsageWindow;
+				seven_day_sonnet?: AnthropicUsageWindow;
+				seven_day_opus?: AnthropicUsageWindow;
+				seven_day_oauth_apps?: AnthropicUsageWindow;
 				extra_usage?: {
 					is_enabled?: boolean;
 					used_credits?: number;
@@ -114,25 +174,8 @@ export class AnthropicProvider extends BaseProvider {
 
 			const windows: RateWindow[] = [];
 
-			if (data.five_hour?.utilization !== undefined) {
-				const resetAt = data.five_hour.resets_at ? new Date(data.five_hour.resets_at) : undefined;
-				windows.push({
-					label: "5h",
-					usedPercent: data.five_hour.utilization,
-					resetDescription: resetAt ? formatReset(resetAt) : undefined,
-					resetAt: resetAt?.toISOString(),
-				});
-			}
-
-			if (data.seven_day?.utilization !== undefined) {
-				const resetAt = data.seven_day.resets_at ? new Date(data.seven_day.resets_at) : undefined;
-				windows.push({
-					label: "Week",
-					usedPercent: data.seven_day.utilization,
-					resetDescription: resetAt ? formatReset(resetAt) : undefined,
-					resetAt: resetAt?.toISOString(),
-				});
-			}
+			pushUsageWindow(windows, "5h", data.five_hour);
+			pushWeekWindow(windows, data);
 
 			// Extra usage
 			const extraUsageEnabled = data.extra_usage?.is_enabled === true;

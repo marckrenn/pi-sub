@@ -95,6 +95,43 @@ function loadCopilotToken(deps: Dependencies): string | undefined {
 	return loadLegacyCopilotToken(deps);
 }
 
+type CopilotQuotaDetail = {
+	percent_remaining?: number;
+	remaining?: number;
+	entitlement?: number;
+	unlimited?: boolean;
+};
+
+type CopilotQuotaSnapshots = {
+	premium_interactions?: CopilotQuotaDetail;
+	chat?: CopilotQuotaDetail;
+	completions?: CopilotQuotaDetail;
+};
+
+function parseCopilotQuotaWindow(
+	label: string,
+	quota: CopilotQuotaDetail | undefined,
+	resetDate?: Date,
+	resetDesc?: string,
+): RateWindow | undefined {
+	if (!quota || quota.unlimited) return undefined;
+	if (quota.percent_remaining === undefined && quota.remaining === undefined && quota.entitlement === undefined) {
+		return undefined;
+	}
+	const monthUsedPercent = Math.max(0, 100 - (quota.percent_remaining ?? 0));
+	return {
+		label,
+		usedPercent: monthUsedPercent,
+		resetDescription: resetDesc,
+		resetAt: resetDate?.toISOString(),
+	};
+}
+
+function pickPrimaryQuota(quota?: CopilotQuotaDetail): CopilotQuotaDetail | undefined {
+	if (!quota || quota.unlimited) return undefined;
+	return quota;
+}
+
 export class CopilotProvider extends BaseProvider {
 	readonly name = "copilot" as const;
 	readonly displayName = "Copilot Plan";
@@ -130,37 +167,31 @@ export class CopilotProvider extends BaseProvider {
 
 			const data = (await res.json()) as {
 				quota_reset_date_utc?: string;
-				quota_snapshots?: {
-					premium_interactions?: {
-						percent_remaining?: number;
-						remaining?: number;
-						entitlement?: number;
-					};
-				};
+				quota_reset_date?: string;
+				quota_snapshots?: CopilotQuotaSnapshots;
 			};
 
 			const windows: RateWindow[] = [];
-			const resetDate = data.quota_reset_date_utc ? new Date(data.quota_reset_date_utc) : undefined;
-			const resetDesc = resetDate ? formatReset(resetDate) : undefined;
+			const resetRaw = data.quota_reset_date_utc ?? data.quota_reset_date;
+			const resetDate = resetRaw ? new Date(resetRaw) : undefined;
+			const resetDesc = resetDate && !Number.isNaN(resetDate.getTime()) ? formatReset(resetDate) : undefined;
 
-			let requestsRemaining: number | undefined;
-			let requestsEntitlement: number | undefined;
+			const snapshots = data.quota_snapshots;
+			const premium = parseCopilotQuotaWindow("Month", snapshots?.premium_interactions, resetDate, resetDesc);
+			const chat = parseCopilotQuotaWindow("Chat", snapshots?.chat, resetDate, resetDesc);
+			const completions = parseCopilotQuotaWindow("Completions", snapshots?.completions, resetDate, resetDesc);
 
-			if (data.quota_snapshots?.premium_interactions) {
-				const pi = data.quota_snapshots.premium_interactions;
-				const monthUsedPercent = Math.max(0, 100 - (pi.percent_remaining || 0));
-				windows.push({
-					label: "Month",
-					usedPercent: monthUsedPercent,
-					resetDescription: resetDesc,
-					resetAt: resetDate?.toISOString(),
-				});
+			if (premium) windows.push(premium);
+			if (chat) windows.push(chat);
+			if (completions) windows.push(completions);
 
-				const remaining = pi.remaining ?? 0;
-				const entitlement = pi.entitlement ?? 0;
-				requestsRemaining = remaining;
-				requestsEntitlement = entitlement;
-			}
+			const primaryQuota =
+				pickPrimaryQuota(snapshots?.premium_interactions) ??
+				pickPrimaryQuota(snapshots?.chat) ??
+				pickPrimaryQuota(snapshots?.completions);
+
+			const requestsRemaining = primaryQuota?.remaining;
+			const requestsEntitlement = primaryQuota?.entitlement;
 
 			return this.snapshot({
 				windows,

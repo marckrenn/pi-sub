@@ -1,4 +1,81 @@
-# @marckrenn/pi-sub-bar
+# @eiei114/pi-sub-bar
+
+## 2.0.2
+
+### Patch Changes
+
+- [#24](https://github.com/eiei114/pi-sub/pull/24) [`c761eff`](https://github.com/eiei114/pi-sub/commit/c761eff51c4b90636ba974b10b08ea9398bb06bc) Thanks [@eiei114](https://github.com/eiei114)! - Batch patch release to verify Discord release webhook delivery.
+
+- Updated dependencies [[`c761eff`](https://github.com/eiei114/pi-sub/commit/c761eff51c4b90636ba974b10b08ea9398bb06bc)]:
+  - @eiei114/pi-sub-core@2.0.2
+  - @eiei114/pi-sub-shared@2.0.2
+
+## 2.0.1
+
+### Patch Changes
+
+- Publish the missed patch release after reconciling public workspace packages with the managed npm inventory.
+
+- Updated dependencies []:
+  - @eiei114/pi-sub-core@2.0.1
+  - @eiei114/pi-sub-shared@2.0.1
+
+## 2.0.0
+
+### Major Changes
+
+- [#13](https://github.com/eiei114/pi-sub/pull/13) [`83da803`](https://github.com/eiei114/pi-sub/commit/83da80316b41cb48f3616bc1353e11c3564c1f3e) Thanks [@eiei114](https://github.com/eiei114)! - Migrate the Pi SDK dependency from the frozen `@mariozechner/*` scope to the official `@earendil-works/*` scope (DOT-771).
+
+  This is a **breaking** peerDependency change: consumers must provide `@earendil-works/pi-coding-agent` (latest 0.80.x) instead of the abandoned `@mariozechner/pi-coding-agent` (last published 0.73.1, effectively frozen).
+
+  Notable adaptations required by the 0.51 → 0.80 SDK upgrade:
+  - `@sinclair/typebox` → `typebox` (the package was renamed and is now a direct dependency of the new SDK).
+  - Event handler renames to match the new event contract: `session_switch` → `session_before_switch`, `session_branch` → `session_before_fork`. Both handlers reset the usage cache and re-fetch, so behavior is preserved.
+  - `ctx.getContextUsage()` now returns `tokens`/`percent` as `number | null` (null while unknown, e.g. right after compaction); coerce to `0` to keep the existing non-null render contract.
+
+  `@eiei114/pi-sub-shared` has no source change but is bumped to stay version-locked with the `fixed` release group.
+
+### Patch Changes
+
+- Updated dependencies [[`83da803`](https://github.com/eiei114/pi-sub/commit/83da80316b41cb48f3616bc1353e11c3564c1f3e)]:
+  - @eiei114/pi-sub-core@2.0.0
+  - @eiei114/pi-sub-shared@2.0.0
+
+## 1.6.1
+
+### Patch Changes
+
+- [#6](https://github.com/eiei114/pi-sub/pull/6) [`3d7604e`](https://github.com/eiei114/pi-sub/commit/3d7604ef7f092f0e5b24d172f59155dfd836671d) Thanks [@eiei114](https://github.com/eiei114)! - Fix Anthropic and Copilot usage providers for upstream API changes (marckrenn/pi-sub#61, #65). Anthropic now reads Claude Code credentials and model-specific weekly quota windows. Copilot now parses chat/completions quota snapshots in addition to premium interactions. Add regression test for legacy cache migration (marckrenn/pi-sub#45).
+
+- Updated dependencies [[`3d7604e`](https://github.com/eiei114/pi-sub/commit/3d7604ef7f092f0e5b24d172f59155dfd836671d)]:
+  - @eiei114/pi-sub-core@1.6.1
+  - @eiei114/pi-sub-shared@1.6.1
+
+## 1.6.0
+
+### Patch Changes
+
+- Updated dependencies [[`c43a83c`](https://github.com/eiei114/pi-sub/commit/c43a83c322d50b96df27d8f178e4bfff1fa64035), [`93242b9`](https://github.com/eiei114/pi-sub/commit/93242b9f021e211796f48f4643fdecbe983f217d)]:
+  - @eiei114/pi-sub-core@1.6.0
+  - @eiei114/pi-sub-shared@1.6.0
+
+## 1.5.2
+
+### Patch Changes
+
+- [#3](https://github.com/eiei114/pi-sub/pull/3) [`7507aa1`](https://github.com/eiei114/pi-sub/commit/7507aa12207cb4b545e30e32c9f09a998cd20f16) Thanks [@eiei114](https://github.com/eiei114)! - Add project status badges to the root README (npm version, license, Node.js, release workflow, PRs welcome).
+
+- Updated dependencies [[`7507aa1`](https://github.com/eiei114/pi-sub/commit/7507aa12207cb4b545e30e32c9f09a998cd20f16)]:
+  - @eiei114/pi-sub-core@1.5.2
+  - @eiei114/pi-sub-shared@1.5.2
+
+## 1.5.1
+
+### Patch Changes
+
+- Updated dependencies [[`ad79e93`](https://github.com/eiei114/pi-sub/commit/ad79e935cd51239b0e74657aabe067885ad59b82), [`ad79e93`](https://github.com/eiei114/pi-sub/commit/ad79e935cd51239b0e74657aabe067885ad59b82)]:
+  - @eiei114/pi-sub-core@1.5.1
+  - @eiei114/pi-sub-shared@1.5.1
 
 ## 1.5.0
 

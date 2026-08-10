@@ -54,13 +54,13 @@ https://github.com/user-attachments/assets/d61d82f6-afd0-45fc-82f3-69910543aa7a
 Install via the pi package manager (recommended). `sub-bar` bundles `sub-core`, so you only need to install sub-bar:
 
 ```bash
-pi install npm:@marckrenn/pi-sub-bar
+pi install npm:@eiei114/pi-sub-bar
 ```
 
 Use `-l` to install into project settings instead of global:
 
 ```bash
-pi install -l npm:@marckrenn/pi-sub-bar
+pi install -l npm:@eiei114/pi-sub-bar
 ```
 
 If you previously installed `sub-core` separately, remove it from `~/.pi/agent/extensions` or `~/.pi/agent/settings.json` to avoid duplicate core instances.
@@ -68,7 +68,7 @@ If you previously installed `sub-core` separately, remove it from `~/.pi/agent/e
 Manual install (local development):
 
 ```bash
-git clone https://github.com/marckrenn/pi-sub.git
+git clone https://github.com/eiei114/pi-sub.git
 cd pi-sub
 npm install
 
@@ -148,8 +148,8 @@ Credentials are loaded by sub-core from:
 Pi packages use a `pi` field in `package.json` plus the `pi-package` keyword for discoverability. This repo already declares `pi.extensions`, so you can install via:
 
 ```bash
-pi install npm:@marckrenn/pi-sub-core
-pi install npm:@marckrenn/pi-sub-bar
+pi install npm:@eiei114/pi-sub-core
+pi install npm:@eiei114/pi-sub-bar
 ```
 
 Manual paths/symlinks still work for local development as documented above.

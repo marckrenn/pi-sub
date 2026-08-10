@@ -2,17 +2,15 @@
  * UI formatting utilities for the sub-bar extension
  */
 
-import type { Theme } from "@mariozechner/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
+import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import type { RateWindow, UsageSnapshot, ProviderStatus, ModelInfo } from "./types.js";
 import type {
 	BaseTextColor,
 	BarStyle,
 	BarType,
 	BarCharacter,
-	BarWidth,
 	ColorScheme,
-	DividerBlanks,
 	ResetTimerContainment,
 	Settings,
 } from "./settings-types.js";
@@ -450,7 +448,6 @@ export function formatUsageWindowParts(
 ): UsageWindowParts {
 	const barStyle: BarStyle = settings?.display.barStyle ?? "both";
 	const barWidthSetting = settings?.display.barWidth;
-	const containBar = settings?.display.containBar ?? false;
 	const barWidth = options?.barWidthOverride ?? (typeof barWidthSetting === "number" ? barWidthSetting : 6);
 	const barType: BarType = settings?.display.barType ?? "horizontal-bar";
 	const brailleFillEmpty = settings?.display.brailleFillEmpty ?? false;
@@ -473,8 +470,6 @@ export function formatUsageWindowParts(
 	const isRemaining = isCodex;
 
 	const barPercent = clampPercent(displayPct);
-	const filled = Math.round((barPercent / 100) * barWidth);
-	const empty = Math.max(0, barWidth - filled);
 
 	const baseColor = getUsageColor(displayPct, isRemaining, colorScheme, errorThreshold, warningThreshold, successThreshold);
 	const usageTargets = resolveUsageColorTargets(settings);
@@ -820,7 +815,6 @@ export function formatUsageStatusWithWidth(
 
 	const useBars = barFill && barEligibleCount > 0;
 	const labelGapUnits = labelGapEnabled ? (providerDividerActive ? 2 : 1) : 0;
-	const dividerSlots = dividerCount + (labelGapEnabled ? 1 : 0);
 	const dividerUnits = dividerCount * 2 + labelGapUnits;
 	const useDividers = dividerFill && dividerUnits > 0;
 

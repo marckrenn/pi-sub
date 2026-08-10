@@ -2,7 +2,7 @@
  * Utility functions for the sub-bar display layer.
  */
 
-import { MODEL_MULTIPLIERS } from "@marckrenn/pi-sub-shared";
+import { MODEL_MULTIPLIERS } from "@eiei114/pi-sub-shared";
 
 export function normalizeTokens(value: string): string[] {
 	return value

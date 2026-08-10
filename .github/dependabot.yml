@@ -1,0 +1,35 @@
+version: 2
+
+# Keep routine version updates for all ecosystems in one weekly PR.
+# Security updates remain outside this version-update group.
+multi-ecosystem-groups:
+  all-dependencies:
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "02:00"
+      timezone: Asia/Tokyo
+    labels:
+      - dependencies
+      - dependabot
+      - maintenance
+    commit-message:
+      prefix: chore(deps)
+      include: scope
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: all-dependencies
+    open-pull-requests-limit: 1
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: all-dependencies
+    open-pull-requests-limit: 1
+    labels:
+      - ci

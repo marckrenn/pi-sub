@@ -1,4 +1,4 @@
-import * as PiTui from "@mariozechner/pi-tui";
+import * as PiTui from "@earendil-works/pi-tui";
 
 export type SettingsListAction =
 	| "selectUp"

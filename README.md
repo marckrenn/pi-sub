@@ -1,24 +1,47 @@
 # pi-sub
 
+[![Join dotfield.xyz on Discord](https://img.shields.io/badge/Join%20dotfield.xyz%20on%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/4945dXZVW5)
+
+[![Release](https://github.com/eiei114/pi-sub/actions/workflows/release.yml/badge.svg?branch=main&event=push)](https://github.com/eiei114/pi-sub/actions/workflows/release.yml)
+[![npm version](https://img.shields.io/npm/v/%40eiei114%2Fpi-sub-core.svg)](https://www.npmjs.com/package/@eiei114/pi-sub-core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Pi package](https://img.shields.io/badge/pi-package-purple.svg)](https://pi.dev/packages)
+[![Trusted Publishing](https://img.shields.io/badge/npm-Trusted%20Publishing-blue.svg)](RELEASE_PROCESS.md)
+
+> Unofficial continuation of [`marckrenn/pi-sub`](https://github.com/marckrenn/pi-sub).
+> This fork keeps the upstream MIT license and attribution, but publishes packages under the `@eiei114` npm scope.
+
 Monorepo for the `sub-*` extension ecosystem: a shared usage core (`sub-core`), UI clients (like `sub-bar`), and headless consumers that subscribe to usage updates.
+
+## About this fork
+
+This fork exists because the upstream repo has been quiet while a few maintenance issues and PRs were waiting. The goal is to keep `pi-sub` usable for current Pi users, not to present this fork as the upstream project.
+
+Initial changes in this fork:
+
+- Package scope changed from `@marckrenn/*` to `@eiei114/*` for npm publishing.
+- Install docs updated for the `@eiei114` packages.
+- Cache writes are more robust on Windows by retrying transient rename failures and cleaning up temp files.
+- Cache lock ownership is safer so one process does not release another process's lock.
+- `turn_end` and `tool_result` refreshes now respect the cache TTL instead of forcing network requests every turn.
 
 ## Overview
 
 - **sub-core**: fetches usage + status, manages cache/locks, owns provider selection, and emits updates via `pi.events`.
 - **sub-bar**: UI widget that renders the current usage state above the editor.
 - **sub-status**: compact status-line client that renders the current usage state via `ctx.ui.setStatus(...)`.
-- **sub-shared**: shared types + event contract (published to npm as `@marckrenn/pi-sub-shared`).
+- **sub-shared**: shared types + event contract (published to npm as `@eiei114/pi-sub-shared`).
 
 `sub-core` can power multiple `sub-*` extensions at once, including rich UI clients like `sub-bar` and compact/headless-friendly clients like `sub-status`.
 
 ## Packages
 
-| Package | Description |
-| --- | --- |
-| [`@marckrenn/pi-sub-core`](./packages/sub-core) | Shared fetch/cache core (pi extension). |
-| [`@marckrenn/pi-sub-bar`](./packages/sub-bar) | Rich widget display client (pi extension). |
-| [`@marckrenn/pi-sub-status`](./packages/sub-status) | Compact status-line display client (pi extension). |
-| [`@marckrenn/pi-sub-shared`](./packages/sub-shared) | Shared types + event contract (npm package). |
+| Package | Version | Downloads | Description |
+| --- | --- | --- | --- |
+| [`@eiei114/pi-sub-core`](https://www.npmjs.com/package/@eiei114/pi-sub-core) | ![npm version](https://img.shields.io/npm/v/%40eiei114%2Fpi-sub-core.svg) | ![npm downloads](https://img.shields.io/npm/dm/%40eiei114%2Fpi-sub-core.svg) | Shared fetch/cache core (pi extension). |
+| [`@eiei114/pi-sub-bar`](https://www.npmjs.com/package/@eiei114/pi-sub-bar) | ![npm version](https://img.shields.io/npm/v/%40eiei114%2Fpi-sub-bar.svg) | ![npm downloads](https://img.shields.io/npm/dm/%40eiei114%2Fpi-sub-bar.svg) | Rich widget display client (pi extension). |
+| [`@eiei114/pi-sub-status`](https://www.npmjs.com/package/@eiei114/pi-sub-status) | ![npm version](https://img.shields.io/npm/v/%40eiei114%2Fpi-sub-status.svg) | ![npm downloads](https://img.shields.io/npm/dm/%40eiei114%2Fpi-sub-status.svg) | Compact status-line display client (pi extension). |
+| [`@eiei114/pi-sub-shared`](https://www.npmjs.com/package/@eiei114/pi-sub-shared) | ![npm version](https://img.shields.io/npm/v/%40eiei114%2Fpi-sub-shared.svg) | ![npm downloads](https://img.shields.io/npm/dm/%40eiei114%2Fpi-sub-shared.svg) | Shared types + event contract (npm package). |
 
 ## Ideas / planned sub-* extensions
 
@@ -32,7 +55,7 @@ If you’d like to work on these, PRs or standalone packages are welcome.
 
 ## Requirements
 
-- Node.js >= 20 (see `.nvmrc`)
+- Node.js >= 24 (see `.nvmrc`)
 - npm (bundled with Node)
 
 ## Pi package manager
@@ -40,9 +63,9 @@ If you’d like to work on these, PRs or standalone packages are welcome.
 You can install the packages via `pi install`:
 
 ```bash
-pi install npm:@marckrenn/pi-sub-core
-pi install npm:@marckrenn/pi-sub-bar
-pi install npm:@marckrenn/pi-sub-status
+pi install npm:@eiei114/pi-sub-core
+pi install npm:@eiei114/pi-sub-bar
+pi install npm:@eiei114/pi-sub-status
 ```
 
 `sub-bar` remains the default rich UI path. `sub-status` is an explicit opt-in compact client and can be installed alongside `sub-bar` when you want both the widget and a status-line summary.
@@ -50,7 +73,7 @@ pi install npm:@marckrenn/pi-sub-status
 ## Quick Start (manual install)
 
 ```bash
-git clone https://github.com/marckrenn/pi-sub.git
+git clone https://github.com/eiei114/pi-sub.git
 
 # Enable the shared core plus one or both display clients
 ln -s /path/to/pi-sub/packages/sub-core   ~/.pi/agent/extensions/sub-core
@@ -181,24 +204,22 @@ Common commands:
 Watch mode:
 
 ```bash
-npm run check:watch -w @marckrenn/pi-sub-core
-npm run check:watch -w @marckrenn/pi-sub-bar
-npm run check:watch -w @marckrenn/pi-sub-status
-npm run check:watch -w @marckrenn/pi-sub-shared
-npm run test:watch -w @marckrenn/pi-sub-bar
-npm run test:watch -w @marckrenn/pi-sub-status
+npm run check:watch -w @eiei114/pi-sub-core
+npm run check:watch -w @eiei114/pi-sub-bar
+npm run check:watch -w @eiei114/pi-sub-status
+npm run check:watch -w @eiei114/pi-sub-shared
+npm run test:watch -w @eiei114/pi-sub-bar
+npm run test:watch -w @eiei114/pi-sub-status
 ```
 
 Workspace-specific commands:
 
 ```bash
-npm run check -w @marckrenn/pi-sub-core
-npm run check -w @marckrenn/pi-sub-bar
-npm run check -w @marckrenn/pi-sub-status
-npm run check -w @marckrenn/pi-sub-shared
-npm run test -w @marckrenn/pi-sub-core
-npm run test -w @marckrenn/pi-sub-bar
-npm run test -w @marckrenn/pi-sub-status
+npm run check -w @eiei114/pi-sub-core
+npm run check -w @eiei114/pi-sub-bar
+npm run check -w @eiei114/pi-sub-status
+npm run check -w @eiei114/pi-sub-shared
+npm run test -w @eiei114/pi-sub-core
+npm run test -w @eiei114/pi-sub-bar
+npm run test -w @eiei114/pi-sub-status
 ```
-
-

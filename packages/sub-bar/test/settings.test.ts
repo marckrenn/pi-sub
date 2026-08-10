@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { Theme } from "@mariozechner/pi-coding-agent";
-import { visibleWidth } from "@mariozechner/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
+import { visibleWidth } from "@earendil-works/pi-tui";
 import { formatUsageStatus, formatUsageWindowParts } from "../src/formatting.js";
 import { buildDisplayShareString, decodeDisplayShareString } from "../src/share.js";
 import {

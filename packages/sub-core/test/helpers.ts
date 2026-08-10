@@ -19,6 +19,7 @@ export function createDeps(options?: {
 	files?: Record<string, string>;
 	fetch?: Dependencies["fetch"];
 	execFileSync?: Dependencies["execFileSync"];
+	execFileSyncWithStderr?: Dependencies["execFileSyncWithStderr"];
 	env?: NodeJS.ProcessEnv;
 	homedir?: string;
 }): { deps: Dependencies; files: Map<string, string> } {
@@ -35,6 +36,10 @@ export function createDeps(options?: {
 		execFileSync: options?.execFileSync
 			?? (() => {
 				throw new Error("execFileSync not mocked");
+			}),
+		execFileSyncWithStderr: options?.execFileSyncWithStderr
+			?? (() => {
+				throw new Error("execFileSyncWithStderr not mocked");
 			}),
 		homedir: () => homedir,
 		env: options?.env ?? {},

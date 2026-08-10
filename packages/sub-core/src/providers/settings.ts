@@ -2,7 +2,7 @@
  * Provider-specific settings helpers.
  */
 
-import type { SettingItem } from "@mariozechner/pi-tui";
+import type { SettingItem } from "@earendil-works/pi-tui";
 import type { ProviderName } from "../types.js";
 import type { Settings, CoreProviderSettings } from "../settings-types.js";
 import { CUSTOM_OPTION } from "../ui/settings-list.js";

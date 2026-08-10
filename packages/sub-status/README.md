@@ -11,13 +11,13 @@ On startup it follows the same bootstrap pattern as `sub-bar`, requests the curr
 Install via the pi package manager:
 
 ```bash
-pi install npm:@marckrenn/pi-sub-status
+pi install npm:@eiei114/pi-sub-status
 ```
 
 Use `-l` to install into project settings instead of global:
 
 ```bash
-pi install -l npm:@marckrenn/pi-sub-status
+pi install -l npm:@eiei114/pi-sub-status
 ```
 
 `sub-status` follows the same package metadata/bootstrap pattern as `sub-bar`: it depends on `sub-core`, declares the same extra extension paths in package metadata, and probes/auto-loads `sub-core` at runtime for resilience.
@@ -52,6 +52,6 @@ Installing `sub-status` alongside `sub-bar` is expected to be supported: `sub-ba
 ## Development
 
 ```bash
-npm run check -w @marckrenn/pi-sub-status
-npm run test -w @marckrenn/pi-sub-status
+npm run check -w @eiei114/pi-sub-status
+npm run test -w @eiei114/pi-sub-status
 ```

@@ -1,12 +1,17 @@
 {
-  "name": "@marckrenn/pi-sub-bar",
-  "version": "1.5.0",
+  "name": "@eiei114/pi-sub-bar",
+  "version": "2.0.2",
   "description": "Usage widget extension for pi-coding-agent - shows current provider usage above the editor",
   "keywords": [
     "pi-package"
   ],
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eiei114/pi-sub.git",
+    "directory": "packages/sub-bar"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
@@ -14,7 +19,7 @@
   "pi": {
     "extensions": [
       "./index.ts",
-      "node_modules/@marckrenn/pi-sub-core/index.ts",
+      "node_modules/@eiei114/pi-sub-core/index.ts",
       "../pi-sub-core/index.ts"
     ]
   },
@@ -25,15 +30,16 @@
     "test:watch": "tsx watch test/all.test.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.8.0"
+    "@types/node": "^26.1.0",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@marckrenn/pi-sub-core": "^1.5.0",
-    "@marckrenn/pi-sub-shared": "^1.5.0"
+    "@eiei114/pi-sub-core": "^2.0.2",
+    "@eiei114/pi-sub-shared": "^2.0.2"
   },
   "peerDependencies": {
-    "@mariozechner/pi-coding-agent": "*"
+    "@earendil-works/pi-coding-agent": "^0.80.0",
+    "@earendil-works/pi-tui": "^0.80.0"
   }
 }

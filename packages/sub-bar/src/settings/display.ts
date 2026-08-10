@@ -2,7 +2,7 @@
  * Display settings UI helpers.
  */
 
-import type { SettingItem } from "@mariozechner/pi-tui";
+import type { SettingItem } from "@earendil-works/pi-tui";
 import type {
 	Settings,
 	BarStyle,

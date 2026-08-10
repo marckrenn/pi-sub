@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createEventBus, type ExtensionAPI, type ExtensionContext } from "@mariozechner/pi-coding-agent";
-import type { SubCoreState, UsageSnapshot } from "@marckrenn/pi-sub-shared";
+import { createEventBus, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { SubCoreState, UsageSnapshot } from "@eiei114/pi-sub-shared";
 import { createStatusRuntime } from "../src/runtime.js";
 
 type StatusCall = {
@@ -265,10 +265,10 @@ test("tries bundled sub-core first and falls back to package resolution when pro
 
 	const importModule = async (specifier: string): Promise<unknown> => {
 		imports.push(specifier);
-		if (specifier.includes("node_modules/@marckrenn/pi-sub-core/index.ts")) {
+		if (specifier.includes("node_modules/@eiei114/pi-sub-core/index.ts")) {
 			throw new Error("missing bundled core");
 		}
-		if (specifier === "@marckrenn/pi-sub-core") {
+		if (specifier === "@eiei114/pi-sub-core") {
 			return {
 				default(api: ExtensionAPI) {
 					(api.events as FakePi["events"]).on("sub-core:request", (payload) => {
@@ -289,8 +289,8 @@ test("tries bundled sub-core first and falls back to package resolution when pro
 	await pi.emitEvent("session_start", ctx);
 	await waitForStatusCalls(1);
 
-	assert.ok(imports[0].includes("node_modules/@marckrenn/pi-sub-core/index.ts"));
-	assert.equal(imports[1], "@marckrenn/pi-sub-core");
+	assert.ok(imports[0].includes("node_modules/@eiei114/pi-sub-core/index.ts"));
+	assert.equal(imports[1], "@eiei114/pi-sub-core");
 	assert.deepEqual(statusCalls, [{ key: "sub-status:usage", text: "Month 42%" }]);
 });
 
@@ -316,6 +316,6 @@ test("warns once when sub-core cannot be auto-loaded from either runtime import 
 	await importLog.waitForCount(2);
 
 	assert.equal(warningLog.calls[0].message, "Failed to auto-load sub-core");
-	assert.equal(importLog.calls[1], "@marckrenn/pi-sub-core");
+	assert.equal(importLog.calls[1], "@eiei114/pi-sub-core");
 	assert.deepEqual(statusCalls, []);
 });

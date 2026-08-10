@@ -2,8 +2,8 @@
  * Settings menu item builders.
  */
 
-import type { SelectItem } from "@mariozechner/pi-tui";
-import type { CoreProviderSettingsMap } from "@marckrenn/pi-sub-shared";
+import type { SelectItem } from "@earendil-works/pi-tui";
+import type { CoreProviderSettingsMap } from "@eiei114/pi-sub-shared";
 import type { Settings } from "../settings-types.js";
 import type { ProviderName } from "../types.js";
 import { PROVIDERS, PROVIDER_DISPLAY_NAMES } from "../providers/metadata.js";

@@ -2,7 +2,7 @@
  * Core settings fallbacks for sub-bar when sub-core settings are unavailable.
  */
 
-import type { CoreSettings } from "@marckrenn/pi-sub-shared";
+import type { CoreSettings } from "@eiei114/pi-sub-shared";
 import type { Settings } from "./settings-types.js";
 import { PROVIDERS, PROVIDER_METADATA } from "./providers/metadata.js";
 

@@ -1,8 +1,13 @@
 {
-  "name": "@marckrenn/pi-sub-shared",
-  "version": "1.5.0",
+  "name": "@eiei114/pi-sub-shared",
+  "version": "2.0.2",
   "description": "Shared types and event contract for the sub-* ecosystem",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eiei114/pi-sub.git",
+    "directory": "packages/sub-shared"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
@@ -15,9 +20,11 @@
   "types": "./index.ts",
   "scripts": {
     "check": "tsc --noEmit",
-    "check:watch": "tsc --noEmit --watch"
+    "check:watch": "tsc --noEmit --watch",
+    "test": "tsx test/all.test.ts"
   },
   "devDependencies": {
-    "typescript": "^5.8.0"
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
   }
 }

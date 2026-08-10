@@ -1,4 +1,4 @@
-# @marckrenn/pi-sub-shared
+# @eiei114/pi-sub-shared
 
 Shared types, metadata, and event contracts for the `sub-*` ecosystem.
 
@@ -9,7 +9,7 @@ This package is consumed by `sub-core` and `sub-bar` to keep provider metadata, 
 ### Installation
 
 ```bash
-npm install @marckrenn/pi-sub-shared
+npm install @eiei114/pi-sub-shared
 ```
 
 ### Usage
@@ -20,7 +20,7 @@ import {
   ProviderName,
   UsageSnapshot,
   getDefaultCoreSettings,
-} from "@marckrenn/pi-sub-shared";
+} from "@eiei114/pi-sub-shared";
 
 const defaults = getDefaultCoreSettings();
 const provider: ProviderName = "anthropic";

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { ProviderStatus, UsageSnapshot } from "@marckrenn/pi-sub-shared";
+import type { ProviderStatus, UsageSnapshot } from "@eiei114/pi-sub-shared";
 import { formatCompactStatus } from "../src/format.js";
 
 function buildUsage(overrides?: Partial<UsageSnapshot>): UsageSnapshot {

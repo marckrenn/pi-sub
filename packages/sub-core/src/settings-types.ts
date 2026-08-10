@@ -2,15 +2,16 @@
  * Settings types and defaults for sub-core
  */
 
+/* eslint-disable @typescript-eslint/no-unused-vars -- re-exports require import type under verbatimModuleSyntax */
 import type {
 	CoreSettings,
 	CoreProviderSettingsMap,
 	CoreProviderSettings,
 	BehaviorSettings,
-	ProviderName,
 	ProviderEnabledSetting,
-} from "@marckrenn/pi-sub-shared";
-import { PROVIDERS, getDefaultCoreSettings } from "@marckrenn/pi-sub-shared";
+} from "@eiei114/pi-sub-shared";
+/* eslint-enable @typescript-eslint/no-unused-vars */
+import { getDefaultCoreSettings } from "@eiei114/pi-sub-shared";
 
 export type {
 	CoreProviderSettings,
@@ -18,7 +19,7 @@ export type {
 	BehaviorSettings,
 	CoreSettings,
 	ProviderEnabledSetting,
-} from "@marckrenn/pi-sub-shared";
+} from "@eiei114/pi-sub-shared";
 
 /**
  * Tool registration settings

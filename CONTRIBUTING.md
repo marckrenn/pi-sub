@@ -4,7 +4,7 @@ Thanks for helping improve **pi-sub**!
 
 ## Requirements
 
-- Node.js >= 20 (see `.nvmrc`)
+- Node.js >= 24 (see `.nvmrc`)
 - npm
 
 ## Setup
@@ -26,20 +26,20 @@ npm run verify
 Workspace-specific commands:
 
 ```bash
-npm run check -w @marckrenn/pi-sub-core
-npm run check -w @marckrenn/pi-sub-bar
-npm run check -w @marckrenn/pi-sub-shared
-npm run test -w @marckrenn/pi-sub-core
-npm run test -w @marckrenn/pi-sub-bar
+npm run check -w @eiei114/pi-sub-core
+npm run check -w @eiei114/pi-sub-bar
+npm run check -w @eiei114/pi-sub-shared
+npm run test -w @eiei114/pi-sub-core
+npm run test -w @eiei114/pi-sub-bar
 ```
 
 Watch mode:
 
 ```bash
-npm run check:watch -w @marckrenn/pi-sub-core
-npm run check:watch -w @marckrenn/pi-sub-bar
-npm run check:watch -w @marckrenn/pi-sub-shared
-npm run test:watch -w @marckrenn/pi-sub-bar
+npm run check:watch -w @eiei114/pi-sub-core
+npm run check:watch -w @eiei114/pi-sub-bar
+npm run check:watch -w @eiei114/pi-sub-shared
+npm run test:watch -w @eiei114/pi-sub-bar
 ```
 
 ## Changesets

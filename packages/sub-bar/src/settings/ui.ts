@@ -2,13 +2,13 @@
  * Settings UI for sub-bar
  */
 
-import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { DynamicBorder, getSettingsListTheme } from "@mariozechner/pi-coding-agent";
-import { Container, Input, SelectList, Spacer, Text } from "@mariozechner/pi-tui";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { DynamicBorder, getSettingsListTheme } from "@earendil-works/pi-coding-agent";
+import { Container, Input, SelectList, Spacer, Text } from "@earendil-works/pi-tui";
 import { SettingsList, type SettingItem, CUSTOM_OPTION } from "../ui/settings-list.js";
 import type { ProviderName } from "../types.js";
 import type { Settings } from "../settings-types.js";
-import type { CoreSettings } from "@marckrenn/pi-sub-shared";
+import type { CoreSettings } from "@eiei114/pi-sub-shared";
 import { getFallbackCoreSettings } from "../core-settings.js";
 import { getDefaultSettings } from "../settings-types.js";
 import { getSettings, saveSettings } from "../settings.js";
@@ -99,7 +99,7 @@ export async function showSettingsUI(
 	const onCoreSettingsChange = options?.onCoreSettingsChange;
 	const onOpenCoreSettings = options?.onOpenCoreSettings;
 	let settings = getSettings();
-	let coreSettings = options?.coreSettings ?? getFallbackCoreSettings(settings);
+	const coreSettings = options?.coreSettings ?? getFallbackCoreSettings(settings);
 	const onDisplayThemeApplied = options?.onDisplayThemeApplied;
 	const onDisplayThemeShared = options?.onDisplayThemeShared;
 	let currentCategory: SettingsCategory = "main";
@@ -1188,8 +1188,7 @@ export async function showSettingsUI(
 				} else {
 					// Settings list for category
 					let items: SettingItem[];
-					let handleChange: (id: string, value: string) => void;
-					let backCategory: SettingsCategory = "display";
+					const backCategory: SettingsCategory = "display";
 
 					switch (currentCategory) {
 						case "display-layout":
@@ -1265,7 +1264,7 @@ export async function showSettingsUI(
 					}
 					attachCustomInputs(items, customHandlers);
 
-					handleChange = (id, value) => {
+					const handleChange = (id: string, value: string) => {
 						settings = applyDisplayChange(settings, id, value);
 						saveSettings(settings);
 						if (onSettingsChange) void onSettingsChange(settings);

@@ -1,4 +1,4 @@
-import type { ProviderStatus, RateWindow, UsageSnapshot } from "@marckrenn/pi-sub-shared";
+import type { ProviderStatus, RateWindow, UsageSnapshot } from "@eiei114/pi-sub-shared";
 
 function clampPercent(value: number): number {
 	return Math.max(0, Math.min(100, Math.round(value)));

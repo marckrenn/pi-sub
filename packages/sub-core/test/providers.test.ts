@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import path from "node:path";
 import { AnthropicProvider } from "../src/providers/impl/anthropic.js";
 import { CopilotProvider } from "../src/providers/impl/copilot.js";
 import { GeminiProvider } from "../src/providers/impl/gemini.js";
@@ -7,6 +8,8 @@ import { AntigravityProvider } from "../src/providers/impl/antigravity.js";
 import { CodexProvider } from "../src/providers/impl/codex.js";
 import { KiroProvider } from "../src/providers/impl/kiro.js";
 import { ZaiProvider } from "../src/providers/impl/zai.js";
+import { KimiCodingProvider } from "../src/providers/impl/kimi-coding.js";
+import { OpenRouterProvider } from "../src/providers/impl/openrouter.js";
 import { createDeps, createJsonResponse, getAuthPath } from "./helpers.js";
 import type { UsageSnapshot } from "../src/types.js";
 
@@ -72,6 +75,44 @@ test("anthropic parses windows and extra usage", async () => {
 	const extra = usage.windows.find((window) => window.label.startsWith("Extra"));
 	assert.ok(extra?.label.includes("Extra [active]"));
 	assert.equal(usage.extraUsageEnabled, true);
+});
+
+test("anthropic falls back to seven_day_sonnet when seven_day is missing", async () => {
+	const provider = new AnthropicProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({
+			five_hour: { utilization: 10, resets_at: new Date(Date.now() + 3600_000).toISOString() },
+			seven_day_sonnet: { utilization: 42, resets_at: new Date(Date.now() + 86400_000).toISOString() },
+		}),
+		execFileSync: () => "",
+	});
+	withAuth(files, { anthropic: { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "5h");
+	assertWindow(usage, "Week");
+	assert.equal(usage.windows.find((window) => window.label === "Week")?.usedPercent, 42);
+});
+
+test("anthropic reads token from Claude credentials file", async () => {
+	const provider = new AnthropicProvider();
+	const home = "/home/test";
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		homedir: home,
+		fetch: async (_url, init) => {
+			authorization = (init as { headers?: { Authorization?: string } })?.headers?.Authorization;
+			return createJsonResponse({});
+		},
+		execFileSync: () => "",
+	});
+	files.set(path.join(home, ".claude", ".credentials.json"), JSON.stringify({
+		claudeAiOauth: { accessToken: "claude-token" },
+	}));
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer claude-token");
 });
 
 test("copilot reads token from GITHUB_TOKEN env var", async () => {
@@ -164,6 +205,113 @@ test("zai reads token from ZAI_API_KEY env var", async () => {
 	assert.equal(authorization, "Bearer z-token");
 });
 
+test("openrouter reads token from OPENROUTER_API_KEY env var", async () => {
+	const provider = new OpenRouterProvider();
+	let authorization: string | undefined;
+
+	const { deps } = createDeps({
+		env: { OPENROUTER_API_KEY: "or-token" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse({ data: { total_credits: 10, total_usage: 2 } });
+		},
+	});
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer or-token");
+});
+
+test("openrouter env token overrides auth.json", async () => {
+	const provider = new OpenRouterProvider();
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		env: { OPENROUTER_API_KEY: "env-token" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse({ data: { total_credits: 10, total_usage: 1 } });
+		},
+	});
+	withAuth(files, { openrouter: { access: "file-token" } }, deps.homedir());
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer env-token");
+});
+
+test("openrouter parses credits and usage window", async () => {
+	const provider = new OpenRouterProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({ data: { total_credits: 20, total_usage: 5 } }),
+	});
+	withAuth(files, { openrouter: { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "Credits");
+	assert.equal(usage.windows[0]?.usedPercent, 25);
+	assert.equal(usage.creditTotal, 20);
+	assert.equal(usage.creditUsage, 5);
+	assert.equal(usage.creditRemaining, 15);
+});
+
+test("openrouter reports http errors", async () => {
+	const provider = new OpenRouterProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({}, { ok: false, status: 401 }),
+	});
+	withAuth(files, { openrouter: { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.error?.code, "HTTP_ERROR");
+});
+
+test("openrouter reports invalid API responses", async () => {
+	const provider = new OpenRouterProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({ data: { total_credits: "10" } }),
+	});
+	withAuth(files, { openrouter: { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.error?.code, "API_ERROR");
+});
+
+test("openrouter clamps creditRemaining when usage exceeds credits", async () => {
+	const provider = new OpenRouterProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({ data: { total_credits: 10, total_usage: 15 } }),
+	});
+	withAuth(files, { openrouter: { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.creditRemaining, 0);
+	assert.equal(usage.windows[0]?.usedPercent, 100);
+});
+
+test("openrouter reports malformed JSON as API error", async () => {
+	const provider = new OpenRouterProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => ({
+			ok: true,
+			status: 200,
+			json: async () => {
+				throw new SyntaxError("Unexpected token");
+			},
+		}),
+	});
+	withAuth(files, { openrouter: { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.error?.code, "API_ERROR");
+});
+
+test("openrouter reports missing credentials", async () => {
+	const provider = new OpenRouterProvider();
+	const { deps } = createDeps();
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.error?.code, "NO_CREDENTIALS");
+});
+
 test("copilot handles missing quota snapshots", async () => {
 	const provider = new CopilotProvider();
 	const { deps, files } = createDeps({
@@ -196,6 +344,29 @@ test("copilot parses quotas and requests", async () => {
 	assert.equal(usage.windows[0]?.usedPercent, 30);
 	assert.equal(usage.requestsRemaining, 10);
 	assert.equal(usage.requestsEntitlement, 50);
+});
+
+test("copilot parses chat quota when premium interactions are missing", async () => {
+	const provider = new CopilotProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({
+			quota_reset_date: "2026-02-01T00:00:00Z",
+			quota_snapshots: {
+				chat: {
+					percent_remaining: 80,
+					remaining: 40,
+					entitlement: 200,
+				},
+			},
+		}),
+	});
+	withAuth(files, { "github-copilot": { refresh: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "Chat");
+	assert.equal(usage.windows[0]?.usedPercent, 20);
+	assert.equal(usage.requestsRemaining, 40);
+	assert.equal(usage.requestsEntitlement, 200);
 });
 
 test("copilot reports http errors", async () => {
@@ -317,14 +488,22 @@ test("codex includes additional rate limits for model-specific usage", async () 
 	assertWindow(usage, "GPT-5.3-Codex-Spark Week");
 });
 
-test("kiro parses percentage and reset date", async () => {
+test("kiro parses percentage and reset date (MM/DD)", async () => {
 	const provider = new KiroProvider();
 	const output = "██████ 12%\nresets on 01/01";
 	const { deps } = createDeps({
 		execFileSync: (file: string, args: string[]) => {
 			if (file === "which" && args[0] === "kiro-cli") return "/usr/local/bin/kiro-cli";
 			if (file === "/usr/local/bin/kiro-cli" && args[0] === "whoami") return "user";
-			if (file === "/usr/local/bin/kiro-cli" && args[0] === "chat") return output;
+			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
+		},
+		// kiro-cli writes usage to stderr, so the chat command is captured via
+		// the stderr-aware path. Putting the payload ONLY on stderr verifies it
+		// is actually included in parsing.
+		execFileSyncWithStderr: (file: string, args: string[]) => {
+			if (file === "/usr/local/bin/kiro-cli" && args[0] === "chat") {
+				return { stdout: "", stderr: output };
+			}
 			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
 		},
 	});
@@ -335,6 +514,29 @@ test("kiro parses percentage and reset date", async () => {
 	assert.ok(usage.windows[0]?.resetAt);
 });
 
+test("kiro parses percentage and reset date (YYYY-MM-DD)", async () => {
+	const provider = new KiroProvider();
+	const output = "██████████████████████████████████ 42%\nresets on 2026-06-01";
+	const { deps } = createDeps({
+		execFileSync: (file: string, args: string[]) => {
+			if (file === "which" && args[0] === "kiro-cli") return "/usr/local/bin/kiro-cli";
+			if (file === "/usr/local/bin/kiro-cli" && args[0] === "whoami") return "user";
+			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
+		},
+		execFileSyncWithStderr: (file: string, args: string[]) => {
+			if (file === "/usr/local/bin/kiro-cli" && args[0] === "chat") {
+				return { stdout: "", stderr: output };
+			}
+			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
+		},
+	});
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "Credits");
+	assert.equal(usage.windows[0]?.usedPercent, 42);
+	assert.ok(usage.windows[0]?.resetAt);
+});
+
 test("kiro parses credits when percent is missing", async () => {
 	const provider = new KiroProvider();
 	const output = "(1.5 of 10 covered in plan) resets on 12/31";
@@ -342,7 +544,12 @@ test("kiro parses credits when percent is missing", async () => {
 		execFileSync: (file: string, args: string[]) => {
 			if (file === "which" && args[0] === "kiro-cli") return "/usr/local/bin/kiro-cli";
 			if (file === "/usr/local/bin/kiro-cli" && args[0] === "whoami") return "user";
-			if (file === "/usr/local/bin/kiro-cli" && args[0] === "chat") return output;
+			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
+		},
+		execFileSyncWithStderr: (file: string, args: string[]) => {
+			if (file === "/usr/local/bin/kiro-cli" && args[0] === "chat") {
+				return { stdout: "", stderr: output };
+			}
 			throw new Error(`Unexpected command ${file} ${args.join(" ")}`);
 		},
 	});
@@ -382,4 +589,175 @@ test("zai reports api errors and parses limits", async () => {
 	const usage = await provider.fetchUsage(okDeps);
 	assertWindow(usage, "Tokens");
 	assertWindow(usage, "Monthly");
+});
+
+test("kimi-coding reads token from KIMI_CODING_OAUTH_TOKEN env var", async () => {
+	const provider = new KimiCodingProvider();
+	let authorization: string | undefined;
+
+	const { deps } = createDeps({
+		env: { KIMI_CODING_OAUTH_TOKEN: "env-token" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse({ usage: { limit: "100", used: "10" } });
+		},
+	});
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer env-token");
+});
+
+test("kimi-coding env token overrides auth.json", async () => {
+	const provider = new KimiCodingProvider();
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		env: { KIMI_CODING_OAUTH_TOKEN: "env-token" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse({ usage: { limit: "100", used: "10" } });
+		},
+	});
+	withAuth(files, { "kimi-coding": { access: "file-token" } }, deps.homedir());
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer env-token");
+});
+
+test("kimi-coding parses week and 5h windows", async () => {
+	const provider = new KimiCodingProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({
+			usage: { limit: "2048", used: "214", remaining: "1834", resetTime: new Date(Date.now() + 86400_000).toISOString() },
+			limits: [{
+				window: { duration: 300, timeUnit: "TIME_UNIT_MINUTE" },
+				detail: { limit: "200", used: "139", remaining: "61", resetTime: new Date(Date.now() + 3600_000).toISOString() },
+			}],
+		}),
+	});
+	withAuth(files, { "kimi-coding": { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "Week");
+	assertWindow(usage, "5h");
+	assert.equal(usage.windows.find((w) => w.label === "Week")?.usedPercent, (214 / 2048) * 100);
+	assert.equal(usage.windows.find((w) => w.label === "5h")?.usedPercent, (139 / 200) * 100);
+});
+
+test("kimi-coding handles missing 5h limit gracefully", async () => {
+	const provider = new KimiCodingProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({
+			usage: { limit: "1024", used: "100", remaining: "924" },
+			limits: [],
+		}),
+	});
+	withAuth(files, { "kimi-coding": { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "Week");
+	assert.equal(usage.windows.length, 1);
+});
+
+test("kimi-coding skips windows with invalid numeric values", async () => {
+	const provider = new KimiCodingProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({
+			usage: { limit: "not-a-number", used: "100" },
+			limits: [{
+				window: { duration: 300, timeUnit: "TIME_UNIT_MINUTE" },
+				detail: { limit: "200", used: "invalid", remaining: "61" },
+			}],
+		}),
+	});
+	withAuth(files, { "kimi-coding": { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.windows.length, 0);
+});
+
+test("kimi-coding ignores invalid resetTime but keeps valid window", async () => {
+	const provider = new KimiCodingProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({
+			usage: { limit: "1024", used: "100", remaining: "924", resetTime: "not-a-date" },
+			limits: [],
+		}),
+	});
+	withAuth(files, { "kimi-coding": { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assertWindow(usage, "Week");
+	assert.equal(usage.windows[0]?.resetAt, undefined);
+	assert.equal(usage.windows[0]?.resetDescription, undefined);
+});
+
+test("kimi-coding reports http errors", async () => {
+	const provider = new KimiCodingProvider();
+	const { deps, files } = createDeps({
+		fetch: async () => createJsonResponse({}, { ok: false, status: 401 }),
+	});
+	withAuth(files, { "kimi-coding": { access: "token" } }, deps.homedir());
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.error?.code, "HTTP_ERROR");
+});
+
+test("kimi-coding reads token from KIMI_API_KEY env var (pi-mono convention)", async () => {
+	const provider = new KimiCodingProvider();
+	let authorization: string | undefined;
+
+	const { deps } = createDeps({
+		env: { KIMI_API_KEY: "env-token" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse({ usage: { limit: "100", used: "10" } });
+		},
+	});
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer env-token");
+});
+
+test("kimi-coding reads token from pi-mono auth.json format", async () => {
+	const provider = new KimiCodingProvider();
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse({ usage: { limit: "100", used: "10" } });
+		},
+	});
+	withAuth(files, { "kimi-coding": { type: "api_key", key: "file-token" } }, deps.homedir());
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer file-token");
+});
+
+test("kimi-coding KIMI_API_KEY env var overrides auth.json", async () => {
+	const provider = new KimiCodingProvider();
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		env: { KIMI_API_KEY: "env-token" },
+		fetch: async (_url, init) => {
+			authorization = (init as any)?.headers?.Authorization;
+			return createJsonResponse({ usage: { limit: "100", used: "10" } });
+		},
+	});
+	withAuth(files, { "kimi-coding": { type: "api_key", key: "file-token" } }, deps.homedir());
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer env-token");
+});
+
+test("kimi-coding reports no credentials", async () => {
+	const provider = new KimiCodingProvider();
+	const { deps } = createDeps({
+		fetch: async () => createJsonResponse({ usage: {} }),
+	});
+
+	const usage = await provider.fetchUsage(deps);
+	assert.equal(usage.error?.code, "NO_CREDENTIALS");
 });

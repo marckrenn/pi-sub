@@ -14,13 +14,13 @@ Shared usage data core for pi extensions. Sub-core owns fetching, caching, provi
 Install via the pi package manager (recommended):
 
 ```bash
-pi install npm:@marckrenn/pi-sub-core
+pi install npm:@eiei114/pi-sub-core
 ```
 
 Use `-l` to install into project settings instead of global:
 
 ```bash
-pi install -l npm:@marckrenn/pi-sub-core
+pi install -l npm:@eiei114/pi-sub-core
 ```
 
 For a UI, also install a display extension like `sub-bar` from the same repo (see the root README for the full setup).
@@ -28,7 +28,7 @@ For a UI, also install a display extension like `sub-bar` from the same repo (se
 Manual install (local development):
 
 ```bash
-git clone https://github.com/marckrenn/pi-sub.git
+git clone https://github.com/eiei114/pi-sub.git
 ln -s /path/to/pi-sub/packages/sub-core ~/.pi/agent/extensions/sub-core
 ```
 
@@ -98,8 +98,10 @@ Legacy cache files next to the extension entry or in the agent root are migrated
 | Google Gemini | Pro/Flash quotas | ✅ | Aggregated by model family |
 | Antigravity | Model quotas | ✅ | Sandbox Cloud Code Assist quotas (tested) |
 | OpenAI Codex | Primary/secondary windows | ✅ | Credits not yet supported (PRs welcome!) |
-| AWS Kiro | Credits | - | Credits not yet supported (PRs welcome!) |
+| AWS Kiro | Credits | - | `kiro-cli /usage` (stdout+stderr); tested on Windows |
 | z.ai | Tokens/monthly limits | - | API quota limits |
+| Kimi for Coding | Week + 5h rolling windows | - | OAuth; tested with `pi-provider-kimi-code` |
+| OpenRouter | Credits | - | API credits endpoint |
 
 ## Development
 
@@ -108,14 +110,14 @@ Legacy cache files next to the extension entry or in the agent root are migrated
 Pi packages use a `pi` field in `package.json` plus the `pi-package` keyword for discoverability. This repo already declares `pi.extensions`, so you can install via:
 
 ```bash
-pi install npm:@marckrenn/pi-sub-core
+pi install npm:@eiei114/pi-sub-core
 ```
 
 Manual paths/symlinks still work for local development as documented above.
 
 ### Tested providers
 
-Tested so far: Anthropic (Claude), OpenAI Codex, GitHub Copilot. Other providers are implemented but not yet verified in production.
+Tested so far: Anthropic (Claude), OpenAI Codex, GitHub Copilot, Kimi for Coding, OpenRouter. Other providers are implemented but not yet verified in production.
 
 ### Adding a Provider
 

@@ -2,8 +2,8 @@
  * sub-core - Shared usage data core for sub-* extensions.
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
 import * as fs from "node:fs";
 import type { Dependencies, ProviderName, SubCoreState, UsageSnapshot } from "./src/types.js";
 import { getDefaultSettings, type Settings } from "./src/settings-types.js";
@@ -14,7 +14,7 @@ import { fetchUsageEntries, getCachedUsageEntries } from "./src/usage/fetch.js";
 import { onCacheSnapshot, onCacheUpdate, watchCacheUpdates, type Cache } from "./src/cache.js";
 import { isExpectedMissingData } from "./src/errors.js";
 import { prioritizeWindowsForModel } from "./src/utils.js";
-import { getStorage } from "./src/storage.js";
+
 import { clearSettingsCache, loadSettings, saveSettings, SETTINGS_PATH } from "./src/settings.js";
 import { showSettingsUI } from "./src/settings-ui.js";
 
@@ -475,29 +475,30 @@ export default function createExtension(pi: ExtensionAPI, deps: Dependencies = c
 
 	pi.on("tool_result", async (_event, ctx) => {
 		if (settings.behavior.refreshOnToolResult) {
-			await refresh(ctx, { force: true });
+			await refresh(ctx);
 		}
 		if (settings.statusRefresh.refreshOnToolResult) {
-			await refreshStatus(ctx, { force: true });
+			await refreshStatus(ctx);
 		}
 	});
 
 	pi.on("turn_end", async (_event, ctx) => {
-		await refresh(ctx, { force: true });
+		await refresh(ctx);
 	});
 
-	pi.on("session_switch", async (_event, ctx) => {
+	const resetUsageCache = async (ctx: ExtensionContext): Promise<void> => {
 		controllerState.currentProvider = undefined;
 		controllerState.cachedUsage = undefined;
 		await refresh(ctx);
 		await refreshStatus(ctx);
+	};
+
+	pi.on("session_before_switch", async (_event, ctx) => {
+		await resetUsageCache(ctx);
 	});
 
-	pi.on("session_branch" as unknown as "session_start", async (_event: unknown, ctx: ExtensionContext) => {
-		controllerState.currentProvider = undefined;
-		controllerState.cachedUsage = undefined;
-		await refresh(ctx);
-		await refreshStatus(ctx);
+	pi.on("session_before_fork", async (_event, ctx) => {
+		await resetUsageCache(ctx);
 	});
 
 	pi.on("model_select" as unknown as "session_start", async (_event: unknown, ctx: ExtensionContext) => {

@@ -1,5 +1,5 @@
-import type { Theme, ThemeColor } from "@mariozechner/pi-coding-agent";
-import { visibleWidth } from "@mariozechner/pi-tui";
+import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
+import { visibleWidth } from "@earendil-works/pi-tui";
 import type { DividerCharacter } from "./settings-types.js";
 
 const ANSI_REGEX = /\x1b\[[0-9;]*m/g;

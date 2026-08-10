@@ -2,9 +2,9 @@
  * Settings types and defaults for sub-bar
  */
 
-import type { CoreSettings, ProviderName } from "@marckrenn/pi-sub-shared";
-import { PROVIDERS } from "@marckrenn/pi-sub-shared";
-import type { ThemeColor } from "@mariozechner/pi-coding-agent";
+import type { CoreSettings, ProviderName } from "@eiei114/pi-sub-shared";
+import { PROVIDERS } from "@eiei114/pi-sub-shared";
+import type { ThemeColor } from "@earendil-works/pi-coding-agent";
 
 /**
  * Bar display style
@@ -274,6 +274,21 @@ export interface ZaiProviderSettings extends BaseProviderSettings {
 	};
 }
 
+export interface KimiCodingProviderSettings extends BaseProviderSettings {
+	windows: {
+		showWeek: boolean;
+		show5h: boolean;
+	};
+}
+
+export interface OpenRouterProviderSettings extends BaseProviderSettings {
+	showRemainingCredit: boolean;
+	showCreditBreakdown: boolean;
+	windows: {
+		showCredits: boolean;
+	};
+}
+
 export interface ProviderSettingsMap {
 	anthropic: AnthropicProviderSettings;
 	copilot: CopilotProviderSettings;
@@ -282,9 +297,11 @@ export interface ProviderSettingsMap {
 	codex: CodexProviderSettings;
 	kiro: KiroProviderSettings;
 	zai: ZaiProviderSettings;
+	"kimi-coding": KimiCodingProviderSettings;
+	openrouter: OpenRouterProviderSettings;
 }
 
-export type { BehaviorSettings, CoreSettings } from "@marckrenn/pi-sub-shared";
+export type { BehaviorSettings, CoreSettings } from "@eiei114/pi-sub-shared";
 
 /**
  * Keybinding settings.
@@ -486,6 +503,21 @@ export function getDefaultSettings(): Settings {
 				windows: {
 					showTokens: true,
 					showMonthly: true,
+				},
+			},
+			"kimi-coding": {
+				showStatus: true,
+				windows: {
+					showWeek: true,
+					show5h: true,
+				},
+			},
+			openrouter: {
+				showStatus: false,
+				showRemainingCredit: true,
+				showCreditBreakdown: false,
+				windows: {
+					showCredits: true,
 				},
 			},
 		},

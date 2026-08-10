@@ -2,9 +2,8 @@
  * Settings menu item builders.
  */
 
-import type { SelectItem } from "@mariozechner/pi-tui";
+import type { SelectItem } from "@earendil-works/pi-tui";
 import type { Settings } from "../settings-types.js";
-import type { ProviderName } from "../types.js";
 import { PROVIDER_DISPLAY_NAMES } from "../providers/metadata.js";
 
 export type TooltipSelectItem = SelectItem & { tooltip?: string };

@@ -6,11 +6,11 @@ export {
 	PROVIDERS,
 	PROVIDER_METADATA,
 	PROVIDER_DISPLAY_NAMES,
-} from "@marckrenn/pi-sub-shared";
+} from "@eiei114/pi-sub-shared";
 
 export type {
 	ProviderName,
 	ProviderMetadata,
 	ProviderStatusConfig,
 	ProviderDetectionConfig,
-} from "@marckrenn/pi-sub-shared";
+} from "@eiei114/pi-sub-shared";

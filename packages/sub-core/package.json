@@ -1,12 +1,17 @@
 {
-  "name": "@marckrenn/pi-sub-core",
-  "version": "1.5.0",
+  "name": "@eiei114/pi-sub-core",
+  "version": "2.0.2",
   "description": "Shared usage data core for pi extensions",
   "keywords": [
     "pi-package"
   ],
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eiei114/pi-sub.git",
+    "directory": "packages/sub-core"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
@@ -22,14 +27,15 @@
     "test": "tsx test/all.test.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.8.0"
+    "@types/node": "^26.1.0",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@marckrenn/pi-sub-shared": "^1.5.0"
+    "@eiei114/pi-sub-shared": "^2.0.2"
   },
   "peerDependencies": {
-    "@mariozechner/pi-coding-agent": "*"
+    "@earendil-works/pi-coding-agent": "^0.80.0",
+    "@earendil-works/pi-tui": "^0.80.0"
   }
 }

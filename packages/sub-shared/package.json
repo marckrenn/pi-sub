@@ -9,7 +9,9 @@
   },
   "files": [
     "index.ts",
-    "README.md"
+    "README.md",
+    "tsconfig.json",
+    "tsconfig.base.json"
   ],
   "main": "./index.ts",
   "types": "./index.ts",

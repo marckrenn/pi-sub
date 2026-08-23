@@ -14,8 +14,8 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write .",
     "sync:tsconfig": "node scripts/sync-tsconfig.mjs",
-    "check:tsconfig-publish": "node scripts/check-tsconfig-publish.mjs",
-    "verify": "npm run sync:tsconfig && npm run check:tsconfig-publish && npm run check && npm run test && npm run lint",
+    "check:tsconfig": "node scripts/sync-tsconfig.mjs --check",
+    "verify": "npm run check:tsconfig && npm run check && npm run test && npm run lint",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "changeset publish"

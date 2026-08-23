@@ -176,7 +176,7 @@ Common commands:
 - `npm run test` — run workspace tests (sub-bar + sub-core + sub-status)
 - `npm run lint` / `npm run lint:fix` — lint TypeScript
 - `npm run format` — format with Prettier
-- `npm run verify` — run check + test + lint
+- `npm run verify` — run tsconfig check + check + test + lint
 
 Watch mode:
 

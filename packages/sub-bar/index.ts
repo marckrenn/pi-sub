@@ -575,7 +575,7 @@ export default function createExtension(pi: ExtensionAPI) {
 		if (placement === "status") {
 			ctx.ui.setWidget("usage", undefined);
 			if (!usage && !message) {
-				ctx.ui.setStatus("sub-bar", "");
+				ctx.ui.setStatus("sub-bar", undefined);
 				return;
 			}
 			const theme = ctx.ui.theme;
@@ -591,7 +591,7 @@ export default function createExtension(pi: ExtensionAPI) {
 				useStatusSafePadding: true,
 			});
 			if (lines.length === 0) {
-				ctx.ui.setStatus("sub-bar", "");
+				ctx.ui.setStatus("sub-bar", undefined);
 				return;
 			}
 			let statusLine = lines.join(" ");
@@ -608,7 +608,7 @@ export default function createExtension(pi: ExtensionAPI) {
 			return;
 		}
 
-		ctx.ui.setStatus("sub-bar", "");
+		ctx.ui.setStatus("sub-bar", undefined);
 		if (!usage && !message) {
 			ctx.ui.setWidget("usage", undefined);
 			return;

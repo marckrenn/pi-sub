@@ -6,7 +6,7 @@ import * as path from "node:path";
 import type { Dependencies, RateWindow, UsageSnapshot } from "../../types.js";
 import { BaseProvider } from "../../provider.js";
 import { noCredentials, fetchFailed, httpError } from "../../errors.js";
-import { formatReset, createTimeoutController } from "../../utils.js";
+import { formatReset, createTimeoutController, getPiAuthPath } from "../../utils.js";
 import { API_TIMEOUT_MS } from "../../config.js";
 
 /**
@@ -80,7 +80,7 @@ function loadCopilotToken(deps: Dependencies): string | undefined {
 	const envToken = (deps.env.COPILOT_GITHUB_TOKEN || deps.env.GH_TOKEN || deps.env.GITHUB_TOKEN || deps.env.COPILOT_TOKEN)?.trim();
 	if (envToken) return envToken;
 
-	const authPath = path.join(deps.homedir(), ".pi", "agent", "auth.json");
+	const authPath = getPiAuthPath(deps);
 	try {
 		if (deps.fileExists(authPath)) {
 			const data = JSON.parse(deps.readFile(authPath) ?? "{}");

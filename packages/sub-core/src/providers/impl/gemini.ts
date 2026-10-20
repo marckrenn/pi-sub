@@ -6,7 +6,7 @@ import * as path from "node:path";
 import type { Dependencies, RateWindow, UsageSnapshot } from "../../types.js";
 import { BaseProvider } from "../../provider.js";
 import { noCredentials, fetchFailed, httpError } from "../../errors.js";
-import { createTimeoutController } from "../../utils.js";
+import { createTimeoutController, getPiAuthPath } from "../../utils.js";
 import { API_TIMEOUT_MS } from "../../config.js";
 
 /**
@@ -23,7 +23,7 @@ function loadGeminiToken(deps: Dependencies): string | undefined {
 	if (envToken) return envToken;
 
 	// Try pi auth.json first
-	const piAuthPath = path.join(deps.homedir(), ".pi", "agent", "auth.json");
+	const piAuthPath = getPiAuthPath(deps);
 	try {
 		if (deps.fileExists(piAuthPath)) {
 			const data = JSON.parse(deps.readFile(piAuthPath) ?? "{}");

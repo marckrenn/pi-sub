@@ -2,11 +2,10 @@
  * Google Antigravity usage provider
  */
 
-import * as path from "node:path";
 import type { Dependencies, RateWindow, UsageSnapshot } from "../../types.js";
 import { BaseProvider } from "../../provider.js";
 import { noCredentials, fetchFailed, httpError } from "../../errors.js";
-import { createTimeoutController, formatReset } from "../../utils.js";
+import { createTimeoutController, formatReset, getPiAuthPath } from "../../utils.js";
 import { API_TIMEOUT_MS } from "../../config.js";
 
 const ANTIGRAVITY_ENDPOINTS = [
@@ -79,7 +78,7 @@ function loadAntigravityAuth(deps: Dependencies): AntigravityAuth | undefined {
 		return { token: envApiKey, projectId: envProjectId || undefined };
 	}
 
-	const piAuthPath = path.join(deps.homedir(), ".pi", "agent", "auth.json");
+	const piAuthPath = getPiAuthPath(deps);
 	try {
 		if (deps.fileExists(piAuthPath)) {
 			const data = JSON.parse(deps.readFile(piAuthPath) ?? "{}");

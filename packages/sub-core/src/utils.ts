@@ -2,8 +2,21 @@
  * Utility functions for the sub-bar extension
  */
 
+import * as path from "node:path";
 import type { Dependencies, RateWindow } from "./types.js";
 import { MODEL_MULTIPLIERS } from "./config.js";
+
+/**
+ * Resolve pi's auth.json, honoring PI_CODING_AGENT_DIR like pi itself
+ */
+export function getPiAuthPath(deps: Dependencies): string {
+	const envDir = deps.env.PI_CODING_AGENT_DIR?.trim();
+	let agentDir = path.join(deps.homedir(), ".pi", "agent");
+	if (envDir === "~") agentDir = deps.homedir();
+	else if (envDir?.startsWith("~/")) agentDir = path.join(deps.homedir(), envDir.slice(2));
+	else if (envDir) agentDir = envDir;
+	return path.join(agentDir, "auth.json");
+}
 
 // Only allow simple CLI names (no spaces/paths) to avoid unsafe command execution.
 const SAFE_CLI_NAME = /^[a-zA-Z0-9._-]+$/;

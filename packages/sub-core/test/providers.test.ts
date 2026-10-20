@@ -54,6 +54,25 @@ test("anthropic env token overrides auth.json", async () => {
 	assert.equal(authorization, "Bearer env-token");
 });
 
+test("auth.json is read from PI_CODING_AGENT_DIR", async () => {
+	const provider = new AnthropicProvider();
+	let authorization: string | undefined;
+
+	const { deps, files } = createDeps({
+		env: { PI_CODING_AGENT_DIR: "~/.config/pi" },
+		fetch: async (_url, init) => {
+			authorization = (init as { headers?: Record<string, string> } | undefined)?.headers?.Authorization;
+			return createJsonResponse({});
+		},
+		execFileSync: () => "",
+	});
+	withAuth(files, { anthropic: { access: "default-dir-token" } }, deps.homedir());
+	files.set("/home/test/.config/pi/auth.json", JSON.stringify({ anthropic: { access: "custom-dir-token" } }));
+
+	await provider.fetchUsage(deps);
+	assert.equal(authorization, "Bearer custom-dir-token");
+});
+
 test("anthropic parses windows and extra usage", async () => {
 	const provider = new AnthropicProvider();
 	const { deps, files } = createDeps({

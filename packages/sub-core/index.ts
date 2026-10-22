@@ -142,7 +142,9 @@ export default function createExtension(pi: ExtensionAPI, deps: Dependencies = c
 
 	const unsubscribeCache = onCacheUpdate((provider, entry) => {
 		if (!controllerState.currentProvider || provider !== controllerState.currentProvider) return;
-		const usage = entry?.usage ? { ...entry.usage, status: entry.status } : undefined;
+		const usage = entry?.usage
+			? { ...entry.usage, status: entry.status, lastSuccessAt: entry.fetchedAt }
+			: undefined;
 		controllerState.cachedUsage = usage;
 		emitCurrentUpdate(controllerState.currentProvider, usage);
 	});

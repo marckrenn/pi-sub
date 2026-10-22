@@ -156,6 +156,12 @@ Sub-core uses `pi.events` as an in-process pub/sub bus. Any `sub-*` extension ca
 `update-current` state is `{ provider, usage }`.
 `update-all` state is `{ provider, entries }`, where entries are cached provider snapshots.
 
+#### Quota window metadata
+
+A `RateWindow` can include `windowSeconds`, the full quota-window duration in seconds. Codex supplies this field only when its API reports a positive, finite `limit_window_seconds`, including model-specific windows. Anthropic supplies 18,000 seconds for `five_hour` and 604,800 seconds for `seven_day`.
+
+Unknown durations are `undefined`. Clients must not infer durations from display labels or reset timestamps. A Codex label can fall back to `3h` even when its API did not report a duration, and a reset timestamp specifies the next reset rather than the full period.
+
 #### Requests (pull current state)
 - `sub-core:request` → `{ reply, includeSettings? }`
 - `sub-core:request` → `{ type: "entries", reply, force? }` (bulk usage entries)

@@ -88,10 +88,10 @@ export class AnthropicProvider extends BaseProvider {
 		const { controller, clear } = createTimeoutController(API_TIMEOUT_MS);
 
 		try {
-			const res = await deps.fetch("https://api.anthropic.com/api/oauth/usage", {
+			const res = await deps.fetch('https://api.anthropic.com/api/oauth/usage', {
 				headers: {
 					Authorization: `Bearer ${token}`,
-					"anthropic-beta": "oauth-2025-04-20",
+					'anthropic-beta': 'oauth-2025-04-20',
 				},
 				signal: controller.signal,
 			});
@@ -117,8 +117,9 @@ export class AnthropicProvider extends BaseProvider {
 			if (data.five_hour?.utilization !== undefined) {
 				const resetAt = data.five_hour.resets_at ? new Date(data.five_hour.resets_at) : undefined;
 				windows.push({
-					label: "5h",
+					label: '5h',
 					usedPercent: data.five_hour.utilization,
+					windowSeconds: 18_000,
 					resetDescription: resetAt ? formatReset(resetAt) : undefined,
 					resetAt: resetAt?.toISOString(),
 				});
@@ -127,8 +128,9 @@ export class AnthropicProvider extends BaseProvider {
 			if (data.seven_day?.utilization !== undefined) {
 				const resetAt = data.seven_day.resets_at ? new Date(data.seven_day.resets_at) : undefined;
 				windows.push({
-					label: "Week",
+					label: 'Week',
 					usedPercent: data.seven_day.utilization,
+					windowSeconds: 604_800,
 					resetDescription: resetAt ? formatReset(resetAt) : undefined,
 					resetAt: resetAt?.toISOString(),
 				});
@@ -145,7 +147,7 @@ export class AnthropicProvider extends BaseProvider {
 				const utilization = extra.utilization || 0;
 				const format = getExtraUsageFormat();
 				// "active" when 5h >= 99%, otherwise "on"
-				const extraStatus = fiveHourUsage >= 99 ? "active" : "on";
+				const extraStatus = fiveHourUsage >= 99 ? 'active' : 'on';
 				let label: string;
 				if (monthlyLimit && monthlyLimit > 0) {
 					label = `Extra [${extraStatus}] ${formatExtraUsageCredits(usedCredits, format)}/${formatExtraUsageCredits(monthlyLimit, format)}`;
@@ -156,7 +158,7 @@ export class AnthropicProvider extends BaseProvider {
 				windows.push({
 					label,
 					usedPercent: utilization,
-					resetDescription: extraStatus === "active" ? "__ACTIVE__" : undefined,
+					resetDescription: extraStatus === 'active' ? '__ACTIVE__' : undefined,
 				});
 			}
 

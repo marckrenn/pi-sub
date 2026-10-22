@@ -107,12 +107,19 @@ function pushWindow(
 	const resetDate = window.reset_at ? new Date(window.reset_at * 1000) : undefined;
 	const label = getWindowLabel(window.limit_window_seconds, fallbackWindowSeconds);
 	const windowLabel = prefix ? `${prefix} ${label}` : label;
-	windows.push({
+	const rateWindow: RateWindow = {
 		label: windowLabel,
 		usedPercent: window.used_percent || 0,
 		resetDescription: resetDate ? formatReset(resetDate) : undefined,
 		resetAt: resetDate?.toISOString(),
-	});
+	};
+	const windowSeconds = window.limit_window_seconds;
+
+	if (typeof windowSeconds === 'number' && Number.isFinite(windowSeconds) && windowSeconds > 0) {
+		rateWindow.windowSeconds = windowSeconds;
+	}
+
+	windows.push(rateWindow);
 }
 
 function addRateWindows(windows: RateWindow[], rateLimit: CodexRateLimit | undefined, prefix?: string): void {

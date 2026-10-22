@@ -16,6 +16,7 @@ export interface ProviderStatus {
 export interface RateWindow {
 	label: string;
 	usedPercent: number;
+	windowSeconds?: number;
 	resetDescription?: string;
 	resetAt?: string;
 }

@@ -20,10 +20,14 @@ export interface RateWindow {
 	resetAt?: string;
 }
 
+export type CredentialSource = "environment" | "pi" | "codex" | "claude-code-keychain";
+
 export interface UsageSnapshot {
 	provider: ProviderName;
 	displayName: string;
 	windows: RateWindow[];
+	accountId?: string;
+	credentialSource?: CredentialSource;
 	extraUsageEnabled?: boolean;
 	fiveHourUsage?: number;
 	lastSuccessAt?: number;

@@ -3,7 +3,12 @@
  */
 
 import * as path from "node:path";
-import type { Dependencies, RateWindow, UsageSnapshot } from "../../types.js";
+import type {
+	CredentialSource,
+	Dependencies,
+	RateWindow,
+	UsageSnapshot,
+} from "../../types.js";
 import { BaseProvider } from "../../provider.js";
 import { noCredentials, fetchFailed, httpError } from "../../errors.js";
 import { formatReset, createTimeoutController } from "../../utils.js";
@@ -13,17 +18,19 @@ import { getSettings } from "../../settings.js";
 /**
  * Load Claude API token from various sources
  */
-function loadClaudeToken(deps: Dependencies): string | undefined {
+function loadClaudeCredentials(
+	deps: Dependencies,
+): { token: string; credentialSource: CredentialSource } | undefined {
 	// Explicit override via env var (useful in CI / menu bar apps)
 	const envToken = deps.env.ANTHROPIC_OAUTH_TOKEN?.trim();
-	if (envToken) return envToken;
+	if (envToken) return { token: envToken, credentialSource: "environment" };
 
 	// Try pi auth.json next
 	const piAuthPath = path.join(deps.homedir(), ".pi", "agent", "auth.json");
 	try {
 		if (deps.fileExists(piAuthPath)) {
 			const data = JSON.parse(deps.readFile(piAuthPath) ?? "{}");
-			if (data.anthropic?.access) return data.anthropic.access;
+			if (data.anthropic?.access) return { token: data.anthropic.access, credentialSource: "pi" };
 		}
 	} catch {
 		// Ignore parse errors
@@ -40,7 +47,7 @@ function loadClaudeToken(deps: Dependencies): string | undefined {
 			const parsed = JSON.parse(keychainData);
 			const scopes = parsed.claudeAiOauth?.scopes || [];
 			if (scopes.includes("user:profile") && parsed.claudeAiOauth?.accessToken) {
-				return parsed.claudeAiOauth.accessToken;
+				return { token: parsed.claudeAiOauth.accessToken, credentialSource: "claude-code-keychain" };
 			}
 		}
 	} catch {
@@ -76,15 +83,16 @@ export class AnthropicProvider extends BaseProvider {
 	readonly displayName = "Claude Plan";
 
 	hasCredentials(deps: Dependencies): boolean {
-		return Boolean(loadClaudeToken(deps));
+		return Boolean(loadClaudeCredentials(deps));
 	}
 
 	async fetchUsage(deps: Dependencies): Promise<UsageSnapshot> {
-		const token = loadClaudeToken(deps);
-		if (!token) {
+		const credentials = loadClaudeCredentials(deps);
+		if (!credentials) {
 			return this.emptySnapshot(noCredentials());
 		}
 
+		const { token, credentialSource } = credentials;
 		const { controller, clear } = createTimeoutController(API_TIMEOUT_MS);
 
 		try {
@@ -162,6 +170,7 @@ export class AnthropicProvider extends BaseProvider {
 
 			return this.snapshot({
 				windows,
+				credentialSource,
 				extraUsageEnabled,
 				fiveHourUsage,
 			});

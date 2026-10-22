@@ -9,6 +9,7 @@ export type {
 	StatusIndicator,
 	ProviderStatus,
 	RateWindow,
+	CredentialSource,
 	UsageSnapshot,
 	UsageError,
 	UsageErrorCode,

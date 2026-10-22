@@ -3,7 +3,12 @@
  */
 
 import * as path from "node:path";
-import type { Dependencies, RateWindow, UsageSnapshot } from "../../types.js";
+import type {
+	CredentialSource,
+	Dependencies,
+	RateWindow,
+	UsageSnapshot,
+} from "../../types.js";
 import { BaseProvider } from "../../provider.js";
 import { noCredentials, fetchFailed, httpError } from "../../errors.js";
 import { formatReset, createTimeoutController } from "../../utils.js";
@@ -30,7 +35,11 @@ interface CodexAdditionalRateLimit {
  * Load Codex credentials from auth.json
  * First tries pi's auth.json, then falls back to legacy codex location
  */
-function loadCodexCredentials(deps: Dependencies): { accessToken?: string; accountId?: string } {
+function loadCodexCredentials(deps: Dependencies): {
+	accessToken?: string;
+	accountId?: string;
+	credentialSource?: CredentialSource;
+} {
 	// Explicit override via env var
 	const envAccessToken = (
 		deps.env.OPENAI_CODEX_OAUTH_TOKEN ||
@@ -40,7 +49,11 @@ function loadCodexCredentials(deps: Dependencies): { accessToken?: string; accou
 	)?.trim();
 	const envAccountId = (deps.env.OPENAI_CODEX_ACCOUNT_ID || deps.env.CHATGPT_ACCOUNT_ID)?.trim();
 	if (envAccessToken) {
-		return { accessToken: envAccessToken, accountId: envAccountId || undefined };
+		return {
+			accessToken: envAccessToken,
+			accountId: envAccountId || undefined,
+			credentialSource: "environment",
+		};
 	}
 
 	// Try pi's auth.json first
@@ -52,6 +65,7 @@ function loadCodexCredentials(deps: Dependencies): { accessToken?: string; accou
 				return {
 					accessToken: data["openai-codex"].access,
 					accountId: data["openai-codex"].accountId,
+					credentialSource: "pi",
 				};
 			}
 		}
@@ -66,11 +80,12 @@ function loadCodexCredentials(deps: Dependencies): { accessToken?: string; accou
 		if (deps.fileExists(authPath)) {
 			const data = JSON.parse(deps.readFile(authPath) ?? "{}");
 			if (data.OPENAI_API_KEY) {
-				return { accessToken: data.OPENAI_API_KEY };
+				return { accessToken: data.OPENAI_API_KEY, credentialSource: "codex" };
 			} else if (data.tokens?.access_token) {
 				return {
 					accessToken: data.tokens.access_token,
 					accountId: data.tokens.account_id,
+					credentialSource: "codex",
 				};
 			}
 		}
@@ -129,7 +144,7 @@ export class CodexProvider extends BaseProvider {
 	}
 
 	async fetchUsage(deps: Dependencies): Promise<UsageSnapshot> {
-		const { accessToken, accountId } = loadCodexCredentials(deps);
+		const { accessToken, accountId, credentialSource } = loadCodexCredentials(deps);
 		if (!accessToken) {
 			return this.emptySnapshot(noCredentials());
 		}
@@ -176,7 +191,13 @@ export class CodexProvider extends BaseProvider {
 				}
 			}
 
-			return this.snapshot({ windows });
+			const usage = this.snapshot({ windows, credentialSource });
+
+			if (typeof accountId === "string" && accountId.trim()) {
+				usage.accountId = accountId;
+			}
+
+			return usage;
 		} catch {
 			clear();
 			return this.emptySnapshot(fetchFailed());

@@ -168,6 +168,23 @@ The `reply` callback receives `{ state }` or `{ entries }` immediately if availa
 
 After an action, sub-core emits `sub-core:update-current` with the new state.
 
+#### Reading provenance
+
+`UsageSnapshot` can include `accountId` and `credentialSource`. The `CredentialSource` type is exported by `@marckrenn/pi-sub-shared` and uses these categories:
+
+| Value | Credential selection |
+|-------|----------------------|
+| `environment` | The provider's token environment variables |
+| `pi` | The default `~/.pi/agent/auth.json` file |
+| `codex` | `$CODEX_HOME/auth.json` or `~/.codex/auth.json` |
+| `claude-code-keychain` | The macOS `Claude Code-credentials` keychain entry |
+
+Codex reports the non-blank string sent in its `ChatGPT-Account-Id` header as `accountId`, when available. Anthropic leaves the account identifier undefined. Unknown provenance remains undefined; token values, API keys, raw credential records and keychain contents are not included.
+
+These fields describe how the quota snapshot was fetched. They do not compare the quota account with Pi's runtime credentials. Error-only snapshots omit provenance, while cached readings retain the provenance of the previous successful fetch.
+
+Metadata is persisted with cached usage. Treat account identifiers as potentially sensitive when logging or displaying snapshots.
+
 ## Credits
 
 - Hannes Januschka ([barts](https://github.com/hjanuschka/shitty-extensions?tab=readme-ov-file#usage-barts), [@hjanuschka](https://x.com/hjanuschka))
